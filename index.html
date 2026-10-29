@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>교감 승진 평정 간편 계산 · 교사 기준</title>
+<style>
+:root{
+  --paper:#EEF3F1; --paper-deep:#E4EBE7; --card:#FFF;
+  --ink-900:#1C2B33; --ink-700:#33454E; --ink-500:#5B6B73;
+  --line:#C7D3CE; --seal:#9E2B25; --seal-soft:#F4E3E0;
+  --jade:#2F6F62; --jade-soft:#E1EEE9;
+  /* 영역 식별 색 — dataviz 검증 통과 (명도대 · 채도 · 색각이상 분리 · 대비 모두 PASS) */
+  --s1:#2A6F9E; --s2:#B0801F; --s3:#1F8A70; --s4:#C0392B; --s5:#5B63C9;
+  --tap:44px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--paper);color:var(--ink-900);
+  font-family:Pretendard,"Malgun Gothic","맑은 고딕",-apple-system,"Segoe UI",sans-serif;
+  line-height:1.55;font-size:clamp(15px,.95rem + .1vw,16px);
+}
+.num{font-variant-numeric:tabular-nums}
+.shell{max-width:1080px;margin:0 auto;padding:0 16px}
+@media(min-width:768px){.shell{padding:0 24px}}
+
+header.top{background:var(--card);border-bottom:1px solid var(--line);padding:18px 0}
+header.top .k{font-size:.74rem;font-weight:600;color:var(--jade)}
+header.top h1{margin:.15em 0 .1em;font-size:clamp(1.3rem,1.05rem + 1.1vw,1.85rem);font-weight:800;letter-spacing:-.02em}
+header.top p{margin:0;font-size:.84rem;color:var(--ink-500)}
+
+.wrap{padding:18px 0 0}
+@media(min-width:1100px){
+  .wrap{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:22px;align-items:start}
+  .side{position:sticky;top:18px}
+}
+.side{display:none}
+@media(min-width:1100px){.side{display:block}}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+@media(min-width:768px){.card{padding:22px}}
+.chead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;
+  border-bottom:1px solid var(--line);padding-bottom:11px;margin-bottom:14px}
+.chead .n{display:flex;align-items:center;gap:9px}
+.chead .sw{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+.chead h2{margin:0;font-size:1rem;font-weight:700}
+.chead .sc{white-space:nowrap}
+.chead .sc b{font-size:1.35rem;font-weight:800;color:var(--seal)}
+.chead .sc span{font-size:.8rem;color:var(--ink-500)}
+
+.note{display:flex;gap:8px;background:var(--paper);border-radius:8px;padding:10px 12px;
+  font-size:.77rem;line-height:1.6;color:var(--ink-700)}
+.note .d{flex:0 0 auto;width:13px;height:13px;border-radius:50%;background:var(--jade);margin-top:3px}
+
+.grid{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:600px){.g2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:600px){.g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:900px){.g3{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+label.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+label.f .lb{font-size:.8rem;font-weight:500;color:var(--ink-700)}
+label.f .hn{font-size:.71rem;color:var(--ink-500)}
+select,input[type=number]{width:100%;min-height:var(--tap);padding:8px 11px;
+  border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink-900);
+  font:inherit;font-size:.875rem;font-variant-numeric:tabular-nums;outline:none}
+select:focus,input:focus{border-color:var(--jade);box-shadow:0 0 0 3px var(--jade-soft)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:var(--tap);
+  padding:8px 14px;border:0;border-radius:8px;background:var(--paper-deep);color:var(--ink-700);
+  font:inherit;font-size:.83rem;font-weight:600;cursor:pointer}
+.btn:hover{filter:brightness(.95)}
+.btn.danger{background:var(--seal-soft);color:var(--seal);padding:8px 12px}
+
+.row{display:grid;grid-template-columns:1fr;gap:10px;border:1px solid var(--line);
+  background:var(--paper);border-radius:10px;padding:11px;margin-bottom:9px}
+@media(min-width:700px){
+  .row{grid-template-columns:1fr 150px auto;align-items:end}
+  .row.r2{grid-template-columns:1fr 1fr auto}
+  .row.r3{grid-template-columns:1fr 1fr 1fr auto}
+}
+.outv{font-size:.75rem;color:var(--ink-500);white-space:nowrap}
+.sub{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0 8px}
+.sub .t{font-size:.87rem;font-weight:700}
+.sub .v{font-size:.84rem;color:var(--ink-700)}
+h3.h{margin:20px 0 9px;font-size:.89rem;font-weight:700}
+h3.h .l{font-weight:400;color:var(--ink-500)}
+.hint{font-size:.72rem;color:var(--ink-500);margin-top:6px}
+.ymrow{display:flex;align-items:center;gap:8px}
+.ymrow .pair{flex:1 1 auto;min-width:0}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+@media(max-width:520px){.tools .btn{flex:1 1 calc(50% - 4px)}.tools .btn.danger{margin-left:0!important;flex:1 1 100%}}
+.hit{color:var(--seal);font-weight:600}
+</style>
+<style>
+.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.panel .k{font-size:.73rem;font-weight:600;color:var(--jade)}
+.panel .big{display:flex;align-items:baseline;gap:6px;margin-top:3px}
+.panel .big b{font-size:2.1rem;font-weight:800;color:var(--seal)}
+.panel .big span{font-size:.88rem;color:var(--ink-500)}
+.bar{display:flex;height:10px;border-radius:999px;overflow:hidden;background:var(--paper-deep);margin:13px 0 9px}
+.bar i{display:block;height:100%;transition:width .3s ease}
+.lg{display:flex;flex-direction:column}
+.lg .r{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
+.lg .r:first-child{border-top:0}
+.lg .nm{display:flex;align-items:center;gap:8px;font-size:.81rem;color:var(--ink-700)}
+.lg .sw{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+.lg .vv{font-size:.81rem;font-weight:600;white-space:nowrap}
+.lg .vv em{font-style:normal;font-weight:400;color:var(--ink-500)}
+.disc{margin-top:13px;background:var(--seal-soft);color:var(--ink-700);border-radius:8px;padding:10px 12px;font-size:.71rem;line-height:1.6}
+
+.li{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line)}
+.li:first-of-type{border-top:0}
+.li .ln{font-size:.81rem;color:var(--ink-700)}
+.li .lnote{font-size:.71rem;color:var(--ink-500);margin-top:2px}
+.li b{font-size:.84rem;font-weight:600;white-space:nowrap}
+.li b em{font-style:normal;font-weight:400;color:var(--ink-500)}
+.cap{display:inline-flex;align-items:center;gap:4px;background:var(--seal-soft);color:var(--seal);
+  border-radius:999px;padding:2px 8px;font-size:.67rem;font-weight:600;white-space:nowrap;margin-right:6px}
+
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--card);
+  border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
+@media(min-width:1100px){.dock{display:none}}
+.dock button{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;
+  background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;min-height:30px}
+.dock .dk{font-size:.71rem;font-weight:600;color:var(--jade)}
+.dock .dv{font-size:1.25rem;font-weight:800;color:var(--seal)}
+.dock .dm{font-size:.79rem;color:var(--ink-500)}
+.dock .cr{color:var(--ink-500);font-size:.8rem;transition:transform .2s}
+.dock[data-o="true"] .cr{transform:rotate(180deg)}
+.dock .bd{display:none;margin-top:8px}
+.dock[data-o="true"] .bd{display:block}
+.spacer{height:92px}
+@media(min-width:1100px){.spacer{display:none}}
+
+/* ===== 출력(인쇄) 패널 — 화면 ===== */
+.savestate{display:inline-flex;align-items:center}
+.st{font-size:.75rem;font-weight:600;padding:5px 10px;border-radius:999px;white-space:nowrap}
+.st.ok{background:var(--jade-soft);color:var(--jade)}
+.st.on{background:#E8EDF7;color:#3B4F80}
+.st.off{background:var(--seal-soft);color:var(--seal)}
+.preview{border:1px solid var(--line);border-radius:10px;padding:14px;background:#fff;overflow-x:auto}
+
+/* ===== 요약 시트 (미리보기 + 인쇄 공용) ===== */
+.sheet{color:var(--ink-900)}
+.sh-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;
+  border-bottom:2px solid var(--ink-900);padding-bottom:9px;margin-bottom:14px}
+.sh-k{font-size:.72rem;color:var(--ink-500)}
+.sh-t{margin:3px 0 0;font-size:1.25rem;font-weight:800;letter-spacing:-.02em}
+.sh-d{font-size:.74rem;color:var(--ink-500);white-space:nowrap}
+
+/* 총계 */
+.hero{display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+  border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--paper)}
+.hero-l{flex:0 0 auto}
+.hero-k{font-size:.72rem;font-weight:600;color:var(--jade)}
+.hero-v{display:flex;align-items:baseline;gap:5px;margin-top:1px}
+.hero-v b{font-size:2.1rem;font-weight:800;color:var(--seal);line-height:1}
+.hero-v span{font-size:.88rem;color:var(--ink-500)}
+.hero-s{font-size:.75rem;color:var(--ink-500);margin-top:3px}
+.hero-r{flex:1 1 220px;min-width:180px}
+
+/* 구역 제목 */
+.sh-blk{display:flex;align-items:center;gap:8px;margin:20px 0 9px;
+  font-size:.86rem;font-weight:800;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.sh-bn{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:4px;
+  background:var(--ink-900);color:#fff;font-size:.68rem;font-weight:700;flex:0 0 auto}
+
+/* 미터 */
+.mt{display:flex;align-items:center;gap:7px}
+.mt-t{flex:1 1 auto;min-width:54px;height:8px;border-radius:999px;background:var(--paper-deep);
+  overflow:hidden;display:block}
+.mt-t i{display:block;height:100%;border-radius:999px}
+.mt.big .mt-t{height:12px}
+.mt-l{flex:0 0 auto;font-size:.73rem;color:var(--ink-500);min-width:40px;text-align:right}
+
+/* 요약표 */
+.sh-tb{width:100%;border-collapse:collapse;font-size:.84rem}
+.sh-tb th{text-align:left;font-weight:600;font-size:.73rem;color:var(--ink-500);
+  border-bottom:1px solid var(--line);padding:7px 8px}
+.sh-tb td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.sh-tb .num{text-align:right;font-variant-numeric:tabular-nums}
+.sh-tb th.num{text-align:right}
+.c-no{width:24px;color:var(--ink-500);font-weight:700}
+.c-nm{font-weight:600}
+.c-nm .sw{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle}
+.c-v{font-weight:700}
+.c-m,.c-g{color:var(--ink-500);white-space:nowrap}
+.c-g .full{color:var(--jade);font-weight:700}
+.c-b{width:150px}
+.sh-tb tfoot td{border-top:2px solid var(--ink-900);border-bottom:0;padding-top:11px;
+  font-weight:800;font-size:.95rem}
+.sh-note{margin-top:9px;font-size:.73rem;color:var(--ink-500)}
+
+/* 점수 구성 그래프 */
+.chart-note{font-size:.73rem;color:var(--ink-500);line-height:1.6;margin-bottom:11px}
+.gchart{display:flex;flex-direction:column;gap:9px}
+.grow{display:flex;align-items:center;gap:10px}
+.glab{flex:0 0 136px;font-size:.78rem;font-weight:600;display:flex;align-items:center;gap:7px}
+.glab .sw{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+.gbar{flex:1 1 auto;display:flex;align-items:center;gap:9px;min-width:0}
+.gwrap{flex:1 1 auto;min-width:0}
+.gtrack{height:15px;border-radius:4px;background:var(--paper-deep);
+  border:1px solid var(--line);overflow:hidden;max-width:100%}
+.gtrack i{display:block;height:100%;border-radius:3px 0 0 3px}
+.gval{flex:0 0 auto;font-size:.75rem;font-weight:700;white-space:nowrap;
+  min-width:86px;text-align:right}
+.gval em{font-style:normal;font-weight:400;color:var(--ink-500)}
+
+/* 입력 내역 상세표 */
+.dt{margin-bottom:14px;break-inside:avoid}
+.dt-h{display:flex;align-items:baseline;gap:9px;margin-bottom:5px;flex-wrap:wrap}
+.dt-h b{font-size:.82rem;font-weight:700}
+.dt-h span{font-size:.71rem;color:var(--ink-500)}
+.dt-tb{width:100%;border-collapse:collapse;font-size:.78rem}
+.dt-tb th{text-align:left;font-weight:600;font-size:.69rem;color:var(--ink-500);
+  background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:6px 8px}
+.dt-tb td{padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.5}
+.dt-tb .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dt-tb th.num{text-align:right}
+.dt-tb tr.muted td{color:var(--ink-500)}
+.dt-tb tr.gsub td{background:var(--paper);border-bottom:1px solid var(--line)}
+.dt-tb tr.gsub i{font-style:normal;color:var(--ink-700);font-weight:600}
+.fml{font-weight:400;color:var(--ink-700);font-size:.74rem}
+.dt-tb td.empty{text-align:center;color:var(--ink-500);padding:11px}
+.dt-tb .dim{color:var(--ink-300)}
+.dt-tb tfoot td{border-top:1.5px solid var(--ink-700);border-bottom:0;font-weight:700;
+  background:var(--paper);padding-top:7px}
+.cap{display:inline-block;background:var(--seal-soft);color:var(--seal);
+  border-radius:999px;padding:1px 7px;font-size:.66rem;font-weight:700;white-space:nowrap}
+
+/* 총평 */
+.sh-rv{border:1px solid var(--line);border-radius:10px;padding:13px;background:var(--paper)}
+.rv-sum{margin:0 0 10px;font-size:.83rem;line-height:1.7}
+.rv-pri{font-size:.8rem;margin-bottom:11px}
+.rv-pri ol{margin:5px 0 0;padding-left:20px}
+.rv-pri li{margin:2px 0}
+.rv-det{display:flex;flex-direction:column;gap:9px}
+.rv-it{font-size:.78rem;break-inside:avoid}
+.rv-h{display:flex;align-items:center;gap:7px;font-weight:700;margin-bottom:3px}
+.rv-h .sw{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+.rv-h .num{margin-left:auto;color:var(--ink-500);font-weight:600}
+.rv-it ul{margin:0;padding-left:18px}
+.rv-it li{margin:2px 0;line-height:1.6}
+.sh-ft{margin-top:14px;padding-top:9px;border-top:1px solid var(--line);
+  font-size:.7rem;color:var(--ink-500);line-height:1.6}
+
+/* ===== 인쇄: 요약 시트만 ===== */
+@media print{
+  .noprint{display:none!important}
+  body{background:#fff;font-size:10pt}
+  .wrap,.layout{display:block!important}
+  .site-header,header.top,.dock,.spacer,.side,.summary-col,.rail-col{display:none!important}
+  /* 입력 카드는 모두 숨기고 마지막 카드(출력 패널) 안의 요약 시트만 남긴다 */
+  #main > .card{display:none!important}
+  #main > .card:last-child{display:block!important;border:0;padding:0;margin:0}
+  #main > .card:last-child > .chead,
+  #main > .card:last-child > .note,
+  #main > .card:last-child > .sub{display:none!important}
+  .preview{border:0;padding:0;overflow:visible}
+  .shell{padding:0;max-width:none}
+
+  /* 막대·배지의 색이 인쇄에서 날아가지 않도록 */
+  .mt-t i,.gtrack i,.sw,.sh-bn,.cap,.hero,.sh-rv,.dt-tb th,.dt-tb tfoot td{
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  .gtrack,.mt-t{border:1px solid #bbb}
+
+  /* 인쇄에서는 여백을 조금 줄여 쪽수를 아낀다 */
+  .hero{padding:10px 13px}
+  .hero-v b{font-size:1.8rem}
+  .sh-blk{margin:13px 0 7px}
+  .chart-note{margin-bottom:8px}
+  .gchart{gap:7px}
+  .dt{margin-bottom:10px}
+  .sh-tb td{padding:6px 8px}
+  .dt-tb td,.dt-tb th{padding:5px 8px}
+  .sh-rv{padding:11px}
+
+  /* 쪽 나눔 */
+  .sheet{break-inside:auto}
+  .sh-blk{break-after:avoid}
+  .dt,.rv-it,.hero{break-inside:avoid}
+  .sh-tb tr,.dt-tb tr{break-inside:avoid}
+  .sh-tb thead,.dt-tb thead{display:table-header-group}
+  .sh-ft{break-before:avoid}
+
+  @page{margin:14mm}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top noprint"><div class="shell">
+  <div class="k">경기도교육청 · 2026. 2. 28. 평정 기준 · <b>교사 → 교감 승진후보자</b></div>
+  <h1>교감 승진 평정 간편 계산</h1>
+  <p>항목을 선택하고 개월 수만 입력하면 평정점이 바로 계산됩니다.</p>
+</div></header>
+
+<main class="shell"><div class="wrap">
+  <div id="main"></div>
+  <div class="side noprint"><div class="panel" id="panel"></div></div>
+</div><div class="spacer"></div></main>
+
+<div class="dock noprint" id="dock" data-o="false">
+  <button data-act="dock" aria-expanded="false">
+    <span style="display:flex;align-items:baseline;gap:8px">
+      <span class="dk">합계</span><span class="dv num" id="dT">0.00</span><span class="dm num" id="dM">/ 110점</span>
+    </span><span class="cr">▾</span>
+  </button>
+  <div class="bar" id="dB"></div>
+  <div class="bd"><div class="lg" id="dL"></div></div>
+</div>
+<script>
+"use strict";
+/* ===================================================================
+   규정 상수 — 「2025년 중등인사·평정업무 처리 기준」
+   전 계산은 '교사 → 교감 승진후보자' 기준으로 고정
+   =================================================================== */
+/* 별표1(지침 130쪽) — '직위'는 평정대상자의 현재 직위를 뜻한다.
+   교감 승진을 준비하는 사람의 현 직위는 '교사'이므로 교사 행을 적용한다.
+     · 가경력 = 각급학교 교장·교감·교사 경력, 장학관·교육연구관·장학사·교육연구사 경력,
+               임용 전 병역 등 법령상 의무 수행 경력
+     · 나경력 = 전임 강사(대학 전임강사 제외) 또는 기간제교원(임시교원 포함) 경력
+   (교사 직위에는 다경력이 없다.)
+   별표2 등급별 평정점: 가 기본 0.3555/64.00, 초과 0.1000/6.00
+                      나 기본 0.3333/60.00, 초과 0.0833/5.00  → 교사 20년이면 70점 만점 */
+var CAREER={
+  basic:{quota:180,rates:{"가":0.3555,"나":0.3333},max:{"가":64.00,"나":60.00},cap:64.00},
+  excess:{quota:60, rates:{"가":0.1000,"나":0.0833},max:{"가":6.00,"나":5.00}, cap:6.00},
+  total:70
+};
+/* 연수성적평정 (교감 승진후보자) : 자격연수 9 + 직무연수 18 + 연구실적 3 = 30 */
+var LIM={
+  qual:9, jobGrade:6, jobUnit:6, jobUnitMax:2, job:18, edu:27, research:3, training:30,
+  bonusTotal:10, common:3.50, selective:7.50, sharedCap:1.00
+};
+/* 자격연수 등급 → 만점 대비 취득률 (승진규정 제32조: 등급만 아는 경우) */
+var QUAL_OPTS=[
+  {v:"",     l:"선택 안 함 / 미이수", pct:null},
+  {v:"top",  l:"최상위 등급 (만점의 90%)", pct:90},
+  {v:"second",l:"차상위 등급 (만점의 85%)", pct:85},
+  {v:"third", l:"제3등급 이하 (만점의 80%)", pct:80}
+];
+/* 직무연수 이수성적 구간 → 환산성적 */
+var JOB_OPTS=[
+  {v:"",   l:"선택 안 함", conv:null},
+  {v:"100",l:"95점 초과  → 환산 100점", conv:100},
+  {v:"95", l:"90점 초과 ~ 95점 이하 → 환산 95점", conv:95},
+  {v:"90", l:"85점 초과 ~ 90점 이하 → 환산 90점", conv:90},
+  {v:"85", l:"85점 이하 → 환산 85점", conv:85}
+];
+/* 명부(평정) 구분 — 원문 확인 결과 두 단계의 평정대상 연수와 계수가 서로 다름
+   · 교감 자격연수대상자 명부 : 평정대상 = 1급 정교사 자격연수 성적, 계수 0.025
+     (「교원 등의 연수에 관한 규정 시행규칙」 2012. 2. 9.)
+   · 교감 승진후보자 명부     : 평정대상 = 교감 자격연수 성적,        계수 0.05 */
+var ROSTERS={
+  target:{v:"target",coef:0.025,
+    l:"교감 자격연수대상자 명부 (교감 자격연수 이수 전)",
+    src:"1급 정교사 자격연수 성적",
+    formula:"9점 − (연수성적만점 − 연수성적) × 0.025"},
+  promo:{v:"promo",coef:0.05,
+    l:"교감 승진후보자 명부 (교감 자격 취득 후)",
+    src:"교감 자격연수 성적",
+    formula:"9점 − (연수성적만점 − 연수성적) × 0.05"}
+};
+/* 연구대회 공동작 지분 (원문: 2인 70%, 3인 50%, 4인 이상 30%) */
+var COAUTHOR=[
+  {v:"1",l:"단독 (100%)",   rate:1.00},
+  {v:"2",l:"2인 공동 (70%)",rate:0.70},
+  {v:"3",l:"3인 공동 (50%)",rate:0.50},
+  {v:"4",l:"4인 이상 (30%)",rate:0.30}
+];
+function coRate(v){for(var i=0;i<COAUTHOR.length;i++)if(COAUTHOR[i].v===String(v))return COAUTHOR[i].rate;return 1.00}
+var COMP={national:{"1":1.50,"2":1.25,"3":1.00},provincial:{"1":1.00,"2":0.75,"3":0.50}};
+var DEG=[
+  {v:"",              l:"없음", p:0},
+  {v:"master_related",l:"석사 · 직무 관련 (1.50점)", p:1.50},
+  {v:"master_other",  l:"석사 · 기타 (1.00점)",      p:1.00},
+  {v:"phd_related",   l:"박사 · 직무 관련 (3.00점)", p:3.00},
+  {v:"phd_other",     l:"박사 · 기타 (1.50점)",      p:1.50}
+];
+var COMMON=[
+  {id:"research_school",  l:"교육부지정 연구·시범·실험학교 근무", rate:0.018, max:1.00, unit:"월"},
+  {id:"overseas",         l:"재외국민교육기관 파견근무",          rate:0.015, max:0.50, unit:"월"},
+  {id:"credited_training",l:"학점화된 직무연수 실적",             rate:0.08,  max:1.00, unit:"년"},
+  {id:"bullying",         l:"학교폭력 예방·해결 기여",            rate:0.10,  max:1.00, unit:"년"}
+];
+var SEL_GROUPS=[
+  {id:"region",l:"근무지 특성 (합산 1.50점 상한)",cap:1.50,items:[
+    {id:"r_ga",l:"도서·벽지·접적 — 가지역(舊 특지)",rate:0.045},
+    {id:"r_na",l:"도서·벽지·접적 — 나지역(舊 갑지)",rate:0.039},
+    {id:"r_da",l:"도서·벽지·접적 — 다지역(舊 을지)",rate:0.033},
+    {id:"r_ra",l:"도서·벽지·접적 — 라지역(舊 병지)",rate:0.027},
+    {id:"myeon",l:"농어촌 — 면(읍·면)지역",rate:0.015},
+    {id:"eup",l:"농어촌 — 읍(동)지역",rate:0.012},
+    {id:"indus",l:"공단지역 (안산 반월·시흥 시화공단 인접교)",rate:0.009},
+    {id:"border",l:"접경지역",rate:0.015},
+    {id:"sp_high",l:"특성화고등학교 근무",rate:0.015},
+    {id:"gen_high",l:"고등학교 근무",rate:0.012},
+    {id:"ind_high",l:"산업수요맞춤형고교 근무",rate:0.0081}]},
+  {id:"lead",l:"선도·연구학교 (공통가산점과 합산 1.00점 상한)",cap:1.00,items:[
+    {id:"lead_do",l:"도교육감 지정 선도·중심학교 등",rate:0.015},
+    {id:"lead_si",l:"지역교육장 지정 선도·중심학교 등",rate:0.0075}]},
+  {id:"duty",l:"담임·순회·파견 등 (합산 3.00점 상한)",cap:3.00,items:[
+    {id:"homeroom",l:"담임·순회·파견·겸임 등",rate:0.021},
+    {id:"olympiad",l:"국제올림피아드 지도",rate:0.021},
+    {id:"invent",l:"발명교실 지도 (2007.3.1.~2022.2.28.)",rate:0.012},
+    {id:"youth",l:"청소년단체 지도",rate:0.006}]},
+  {id:"post",l:"보직교사·교육전문직 (합산 2.00점 상한)",cap:2.00,items:[
+    {id:"head",l:"보직교사(부장) 근무",rate:0.027},
+    {id:"super",l:"장학사·교육연구사 경력",rate:0.012}]}
+];
+function selItem(id){
+  for(var i=0;i<SEL_GROUPS.length;i++)for(var j=0;j<SEL_GROUPS[i].items.length;j++)
+    if(SEL_GROUPS[i].items[j].id===id)return {g:SEL_GROUPS[i],it:SEL_GROUPS[i].items[j]};
+  return null;
+}
+/* ── 유틸 ── */
+function clamp(n,a,b){return Math.min(Math.max(n,a),b)}
+function r3(n){return Math.round(n*1000)/1000}
+/* 평정점은 「승진규정」에 따라 소수점 넷째자리에서 반올림하여 셋째자리까지 표시한다. */
+function fmt(n,d){d=(d===undefined)?3:d;
+  if(n===null||n===undefined||isNaN(n))return (0).toFixed(d);
+  return Number(n).toLocaleString("ko-KR",{minimumFractionDigits:d,maximumFractionDigits:d})}
+function fmtMax(n){return fmt(n,2)}   /* 만점·상한은 규정상 고정값이므로 2자리로 표기 */
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;")
+  .replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function nn(v){var n=Number(v);return (v===""||v==null||isNaN(n)||n<0)?0:n}
+/* 년·월 입력을 총 개월 수로 환산. 예전 저장본(숫자 하나)도 그대로 읽어들인다. */
+function toM(v){
+  if(v===null||v===undefined||v==="")return 0;
+  if(typeof v==="object")return nn(v.y)*12+nn(v.m);
+  return nn(v);
+}
+function ymLabel(v){
+  var t=toM(v); if(t<=0)return "";
+  var y=Math.floor(t/12), m=Math.round(t%12);
+  return "총 "+t+"개월"+(y>0?" ("+y+"년"+(m>0?" "+m+"개월":"")+")":"");
+}
+
+/* ===================================================================
+   ① 교육경력 — 정교사(나) / 기간제·강사(다) 개월 수로 계산
+   최근 경력(정교사)부터 기본경력 15년 → 초과경력 5년 순으로 배분
+   =================================================================== */
+function calcCareer(gaM,naM){
+  var pools={basic:{"가":0,"나":0},excess:{"가":0,"나":0}}, run=0, over=0;
+  var ceil=CAREER.basic.quota+CAREER.excess.quota;
+  /* 최근 경력(교사=가)부터 기본경력 15년 → 초과경력 5년 순으로 배분 */
+  [["가",gaM],["나",naM]].forEach(function(p){
+    var g=p[0], rem=p[1];
+    if(rem<=0)return;
+    if(run<CAREER.basic.quota){var t=Math.min(CAREER.basic.quota-run,rem);pools.basic[g]+=t;run+=t;rem-=t;}
+    if(rem>0&&run<ceil){var t2=Math.min(ceil-run,rem);pools.excess[g]+=t2;run+=t2;rem-=t2;}
+    if(rem>0)over+=rem;
+  });
+  function score(by,cfg){
+    var tot=by["가"]+by["나"];
+    var used=["가","나"].filter(function(g){return by[g]>0.01});
+    /* 별표2 단서: 해당 구간을 단일 등급으로 만근하면 계산값 대신 그 등급의 만점을 부여 */
+    if(used.length===1&&Math.abs(tot-cfg.quota)<0.05)return cfg.max[used[0]];
+    var s=0;["가","나"].forEach(function(g){s+=by[g]*cfg.rates[g]});
+    return Math.min(s,cfg.cap);
+  }
+  var b=score(pools.basic,CAREER.basic), e=score(pools.excess,CAREER.excess);
+  /* 규정: 기본·초과 평정점을 합산한 뒤 합계에서 넷째자리를 반올림한다 */
+  return {
+    total:clamp(r3(b+e),0,CAREER.total), max:CAREER.total,
+    basic:{score:r3(b),months:pools.basic["가"]+pools.basic["나"],max:CAREER.basic.max["가"],
+           by:{"가":pools.basic["가"],"나":pools.basic["나"]}},
+    excess:{score:r3(e),months:pools.excess["가"]+pools.excess["나"],max:CAREER.excess.max["가"],
+            by:{"가":pools.excess["가"],"나":pools.excess["나"]}},
+    inGa:gaM, inNa:naM,            /* 입력 원본(개월) */
+    overMonths:over
+  };
+}
+
+/* ===================================================================
+   ② 연수성적 — 자격연수(9) + 직무연수(18) + 연구실적(3)
+   =================================================================== */
+function calcTraining(t){
+  /* 자격연수: 성적 직접 입력이 있으면 우선, 없으면 등급 환산 */
+  var R=ROSTERS[t.roster]||ROSTERS.promo, coef=R.coef;
+  var q=0, qBasis="", qFloor=false, qNone=false;
+  var full=nn(t.qualFull)||100;
+  var pct=null;                       /* 만점 대비 취득률(%) */
+  if(t.qualScore!=="" && nn(t.qualScore)>0 && full>0){
+    pct=nn(t.qualScore)/full*100;
+    qBasis="성적 "+fmt(nn(t.qualScore),1)+" / "+fmt(full,0)+"점";
+  }else{
+    var o=QUAL_OPTS.filter(function(x){return x.v===t.qualGrade})[0];
+    if(o&&o.pct!==null){pct=o.pct; qBasis=o.l;}
+  }
+  if(pct!==null){
+    /* 원문 유의사항: 8할 미만이면 8할로 평정, 6할 미만이면 평정하지 아니함 */
+    if(pct<60){ q=0; qNone=true; }
+    else{
+      if(pct<80){ pct=80; qFloor=true; }
+      q=clamp(r3(9-(100-pct)*coef),0,LIM.qual);
+    }
+    qBasis+=" · "+R.formula;
+  }
+  /* 직무연수: 성적평정(6) = 6×(환산성적/100), 이수실적(12) = 6점 × min(건수-1, 2) */
+  var jo=JOB_OPTS.filter(function(x){return x.v===t.jobBest})[0];
+  var conv=jo?jo.conv:null, cnt=Math.floor(nn(t.jobCount));
+  var jg=0, ju=0, units=0;
+  if(conv!==null && cnt>0){
+    jg=clamp(r3(LIM.jobGrade*(conv/100)),0,LIM.jobGrade);
+    units=clamp(cnt-1,0,LIM.jobUnitMax);
+    ju=LIM.jobUnit*units;
+  }
+  var job=clamp(r3(jg+ju),0,LIM.job);
+  var eduRaw=r3(q+job), edu=clamp(eduRaw,0,LIM.edu);
+  /* 연구실적: 학년도별 최고 1건만 + 학위, 합산 3점 상한 */
+  var awards=0;
+  t.awards.forEach(function(a){
+    if(a.scope&&a.grade)awards+=COMP[a.scope][a.grade]*coRate(a.people);
+  });
+  var dg=DEG.filter(function(x){return x.v===t.degree})[0];
+  var research=Math.min(r3(awards+(dg?dg.p:0)),LIM.research);
+  var totRaw=r3(edu+research);
+  return {
+    total:clamp(totRaw,0,LIM.training), max:LIM.training, capped:totRaw>LIM.training+0.0005,
+    qual:{score:q,max:LIM.qual,basis:qBasis,floor:qFloor,none:qNone,coef:coef,roster:R},
+    job:{score:job,max:LIM.job,grade:jg,units:ju,unitCount:units,conv:conv,count:cnt},
+    edu:{score:edu,max:LIM.edu,capped:eduRaw>LIM.edu+0.0005},
+    research:{score:research,max:LIM.research,rawSum:r3(awards+(dg?dg.p:0))}
+  };
+}
+
+/* ===================================================================
+   ③ 가산점 — 공통(3.50) + 선택(7.50), 총합 10.00 상한
+   교차 상한: 연구·시범·실험학교(공통) + 선도·중심학교(선택) 합산 1.00
+   =================================================================== */
+function calcBonus(b){
+  var cTot=0, cD={};
+  COMMON.forEach(function(it){
+    var qty=(it.unit==="월")?toM(b.common[it.id]):nn(b.common[it.id]);
+    var s=Math.min(qty*it.rate,it.max);  // 항목별 상한
+    cD[it.id]=r3(s); cTot+=s;
+  });
+  cTot=Math.min(r3(cTot),LIM.common);
+  var gTot={}, sTot=0;
+  SEL_GROUPS.forEach(function(g){gTot[g.id]=0});
+  b.selective.forEach(function(row){
+    var f=selItem(row.id); if(!f)return;
+    gTot[f.g.id]+=toM(row.months)*f.it.rate;
+  });
+  SEL_GROUPS.forEach(function(g){gTot[g.id]=Math.min(r3(gTot[g.id]),g.cap); sTot+=gTot[g.id]}); // 그룹별 상한
+  sTot=Math.min(r3(sTot),LIM.selective);
+  var shC=cD.research_school||0, shS=gTot.lead||0;
+  var overlap=Math.max(0,r3(shC+shS-LIM.sharedCap));
+  var after=r3(r3(cTot+sTot)-overlap);
+  return {
+    total:clamp(after,0,LIM.bonusTotal), max:LIM.bonusTotal, capped:after>LIM.bonusTotal+0.0005,
+    common:{total:cTot,detail:cD,max:LIM.common},
+    selective:{total:sTot,groups:gTot,max:LIM.selective},
+    shared:{commonV:shC,selV:shS,cap:LIM.sharedCap,overlap:overlap,capped:overlap>0.0005}
+  };
+}
+
+/* ===================================================================
+   근무성적평정 조정점 조견표 (지침 222~236쪽, 중등)
+   · 행 = 순위(등수), 열 = 평정대상 인원(3~130명)
+   · 지침 8277행: "조정점 = 총점 및 순위에 의한 조정점 조견표 상의 점수"
+   · 지침 5595행: "최종 근무성적평정점 = 근무성적평정표(합산표) 상의 조정점"
+   · 분포비율 수30% / 우40% / 미20% / 양10% 이 이미 반영된 표이다.
+   저장 방식: 1위 100.00 에서 시작하는 차분(差分)을 36진수 2자리로 압축.
+   =================================================================== */
+var ADJ_RAW={
+  3:"dxdw", 4:"dx2sb4", 5:"2sb52sb4",
+  6:"2sb52sb42s", 7:"2sb527279i2s", 8:"2sb527279i2828",
+  9:"28289h27279i2828", 10:"28289h1o1o1o8w2828", 11:"28289h1r1r1r1r6w2828",
+  12:"2222227r1r1r1r1r6w2828", 13:"2222227r1r1r1r1r6w222222", 14:"2222227r1n1n1n1n1n5p222222",
+  15:"1x1x1x1x691n1n1n1n1n5p222222", 16:"1x1x1x1x691n1n1n1n1n5p1x1x1x1x", 17:"1x1x1x1x691k1k1k1k1k1k4k1x1x1x1x",
+  18:"1x1x1x1x691k1k1k1k1k1k4k1u1u1u1u1u", 19:"1u1u1u1u1u4r1k1k1k1k1k1k4k1u1u1u1u1u", 20:"1u1u1u1u1u4r1h1h1h1h1h1h1h3l1u1u1u1u1u",
+  21:"1u1u1u1u1u4r1f1f1f1f1f1f1f1f2k1u1u1u1u1u", 22:"1s1s1s1s1s1s391f1f1f1f1f1f1f1f2k1u1u1u1u1u", 23:"1s1s1s1s1s1s391f1f1f1f1f1f1f1f2k1s1s1s1s1s1s",
+  24:"1s1s1s1s1s1s391e1e1e1e1e1e1e1e1e1e1s1s1s1s1s1s", 25:"1q1q1q1q1q1q1q1v1e1e1e1e1e1e1e1e1e1e1s1s1s1s1s1s", 26:"1q1q1q1q1q1q1q1v1e1e1e1e1e1e1e1e1e1e1q1q1q1q1q1q1q",
+  27:"1q1q1q1q1q1q1q1v191919191919191919191e1q1q1q1q1q1q1q", 28:"1q1q1q1q1q1q1q1v191919191919191919191e1j1j1j1j1j1j1j1j", 29:"1j1j1j1j1j1j1j1j1p191919191919191919191e1j1j1j1j1j1j1j1j",
+  30:"1j1j1j1j1j1j1j1j1p15151515151515151515151d1j1j1j1j1j1j1j1j", 31:"1j1j1j1j1j1j1j1j1p121212121212121212121212181j1j1j1j1j1j1j1j", 32:"1e1e1e1e1e1e1e1e1e1f121212121212121212121212181j1j1j1j1j1j1j1j",
+  33:"1e1e1e1e1e1e1e1e1e1f121212121212121212121212181e1e1e1e1e1e1e1e1e", 34:"1e1e1e1e1e1e1e1e1e1f0z0z0z0z0z0z0z0z0z0z0z0z0z191e1e1e1e1e1e1e1e1e", 35:"191919191919191919191f0z0z0z0z0z0z0z0z0z0z0z0z0z191e1e1e1e1e1e1e1e1e",
+  36:"191919191919191919191f0z0z0z0z0z0z0z0z0z0z0z0z0z1919191919191919191919", 37:"191919191919191919191f0x0x0x0x0x0x0x0x0x0x0x0x0x0x1219191919191919191919", 38:"191919191919191919191f0x0x0x0x0x0x0x0x0x0x0x0x0x0x121515151515151515151515",
+  39:"15151515151515151515151e0x0x0x0x0x0x0x0x0x0x0x0x0x0x121515151515151515151515", 40:"15151515151515151515151e0v0v0v0v0v0v0v0v0v0v0v0v0v0v0v0z1515151515151515151515", 41:"15151515151515151515151e0t0t0t0t0t0t0t0t0t0t0t0t0t0t0t0t101515151515151515151515",
+  42:"121212121212121212121212190t0t0t0t0t0t0t0t0t0t0t0t0t0t0t0t101515151515151515151515", 43:"121212121212121212121212190t0t0t0t0t0t0t0t0t0t0t0t0t0t0t0t10121212121212121212121212", 44:"121212121212121212121212190r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r15121212121212121212121212",
+  45:"0z0z0z0z0z0z0z0z0z0z0z0z0z1a0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r15121212121212121212121212", 46:"0z0z0z0z0z0z0z0z0z0z0z0z0z1a0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r150z0z0z0z0z0z0z0z0z0z0z0z0z", 47:"0z0z0z0z0z0z0z0z0z0z0z0z0z1a0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0w0z0z0z0z0z0z0z0z0z0z0z0z0z",
+  48:"0z0z0z0z0z0z0z0z0z0z0z0z0z1a0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0w0x0x0x0x0x0x0x0x0x0x0x0x0x0x", 49:"0x0x0x0x0x0x0x0x0x0x0x0x0x0x130q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0w0x0x0x0x0x0x0x0x0x0x0x0x0x0x", 50:"0x0x0x0x0x0x0x0x0x0x0x0x0x0x130p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0x0x0x0x0x0x0x0x0x0x0x0x0x0x",
+  51:"0x0x0x0x0x0x0x0x0x0x0x0x0x0x130n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n140x0x0x0x0x0x0x0x0x0x0x0x0x0x", 52:"0v0v0v0v0v0v0v0v0v0v0v0v0v0v0v100n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n140x0x0x0x0x0x0x0x0x0x0x0x0x0x", 53:"0v0v0v0v0v0v0v0v0v0v0v0v0v0v0v100n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n140v0v0v0v0v0v0v0v0v0v0v0v0v0v0v",
+  54:"0v0v0v0v0v0v0v0v0v0v0v0v0v0v0v100m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m120v0v0v0v0v0v0v0v0v0v0v0v0v0v0v", 55:"0t0t0t0t0t0t0t0t0t0t0t0t0t0t0t0t110m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m120v0v0v0v0v0v0v0v0v0v0v0v0v0v0v", 56:"0t0t0t0t0t0t0t0t0t0t0t0t0t0t0t0t110m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m120t0t0t0t0t0t0t0t0t0t0t0t0t0t0t0t",
+  57:"0t0t0t0t0t0t0t0t0t0t0t0t0t0t0t0t110l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l120t0t0t0t0t0t0t0t0t0t0t0t0t0t0t0t", 58:"0t0t0t0t0t0t0t0t0t0t0t0t0t0t0t0t110l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l120r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r", 59:"0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r160l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l120r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r",
+  60:"0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r160k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k140r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r", 61:"0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r160k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r", 62:"0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0x0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r0r",
+  63:"0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0x0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q", 64:"0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0x0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0p0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q", 65:"0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0q0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0p0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q0q",
+  66:"0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0q0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p", 67:"0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0q0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0w0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p", 68:"0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0p0q0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0w0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n",
+  69:"0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n150i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0w0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n", 70:"0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n150h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h150n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n", 71:"0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n150h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0o0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n",
+  72:"0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m130h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0o0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n0n", 73:"0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m130h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0o0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m", 74:"0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m130g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g100m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m",
+  75:"0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l130g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g100m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m0m", 76:"0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l130g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g100l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l", 77:"0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l130g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0k0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l",
+  78:"0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l0l130g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k", 79:"0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k150g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k", 80:"0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k150f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0z0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k",
+  81:"0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k150f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k", 82:"0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0l0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k", 83:"0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0l0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k",
+  84:"0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0l0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e120k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k", 85:"0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0q0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e120k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k0k", 86:"0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0q0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e120j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j",
+  87:"0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0q0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0o0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j", 88:"0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0j0q0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0o0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i", 89:"0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0x0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0o0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i",
+  90:"0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0x0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d190i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i", 91:"0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0x0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0w0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i", 92:"0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h160d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0w0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i0i",
+  93:"0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h160d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0w0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h", 94:"0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h160d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0j0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h", 95:"0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0p0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0j0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h",
+  96:"0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0p0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0j0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h", 97:"0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0p0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c180h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h", 98:"0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0h0p0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c180g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g",
+  99:"0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g110c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c180g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g", 100:"0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g110c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0w0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g", 101:"0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g110c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0k0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g",
+  102:"0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0l0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0k0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g", 103:"0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0l0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0k0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g", 104:"0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0l0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b1d0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g",
+  105:"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f100b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b1d0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g0g", 106:"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f100b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b1d0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f", 107:"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f100b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b120f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
+  108:"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f100b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b120f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f", 109:"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0l0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b120f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f", 110:"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0l0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0r0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f",
+  111:"0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0l0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0g0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f", 112:"0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e130b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0g0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f", 113:"0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e130b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0g0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e",
+  114:"0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e130a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a1e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e", 115:"0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0p0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a1e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e", 116:"0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0p0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a1e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e",
+  117:"0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0p0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a140e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e", 118:"0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0p0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a140d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d", 119:"0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d1a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a140d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d",
+  120:"0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d1a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0u0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d", 121:"0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d1a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0k0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d", 122:"0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0x0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0k0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d",
+  123:"0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0x0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0k0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d", 124:"0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0x0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d", 125:"0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0k0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d",
+  126:"0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0k0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d", 127:"0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0k09090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909091e0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d", 128:"0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0k09090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909091e0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c",
+  129:"0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c1909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909091e0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c", 130:"0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c19090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909150c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c"
+};
+var ADJ_MIN=3, ADJ_MAX=130;
+var _adjCache={};
+function adjTable(n){
+  if(_adjCache[n])return _adjCache[n];
+  var s=ADJ_RAW[n]; if(!s)return null;
+  var D="0123456789abcdefghijklmnopqrstuvwxyz", cur=10000, out=[10000];
+  for(var i=0;i<s.length;i+=2){ cur-=D.indexOf(s[i])*36+D.indexOf(s[i+1]); out.push(cur); }
+  var r=out.map(function(x){return Math.round(x)/100});
+  _adjCache[n]=r; return r;
+}
+/* 평정대상 인원 n 명 중 등수 rank 인 사람의 조정점(=최종 근무성적평정점) */
+function adjScore(n,rank){
+  n=Math.floor(nn(n)); rank=Math.floor(nn(rank));
+  if(n<ADJ_MIN||n>ADJ_MAX||rank<1||rank>n)return null;
+  var t=adjTable(n); return t?t[rank-1]:null;
+}
+
+/* ===================================================================
+   근무성적평정 (선택 입력) — 지침 135쪽
+   "교사로서 교감 자격연수 및 승진 평정대상자는 명부의 작성기준일부터 5년 이내에
+    해당 직위에서 평정한 합산점 중에서 평정대상자에게 유리한 3년을 선택하여 산정한다."
+     합산점 = 가장 가까운 연도 ×34/100 + 두 번째 ×33/100 + 세 번째 ×33/100
+   ※ 여기서 '가장 가까운 연도'는 선택된 3개 연도 안에서의 상대적 순서를 뜻한다.
+   ※ 합산점은 소수점 넷째자리에서 반올림하여 셋째자리까지 계산한다.
+   =================================================================== */
+var PERF_MAX=100, PERF_W=[0.34,0.33,0.33];
+function calcPerf(pf){
+  if(!pf||!pf.on)return {on:false,total:0,max:0,years:[],picked:[],usable:0};
+  /* 최근연도(index 0) → 과거 순으로 각 연도의 조정점 산출 */
+  var ys=pf.years.map(function(y,i){
+    return {i:i,label:y.label,people:y.people,rank:y.rank,score:adjScore(y.people,y.rank)};
+  });
+  var ok=ys.filter(function(y){return y.score!==null});
+  var best={total:0,picked:[]};
+  if(ok.length>=1&&ok.length<=2){
+    /* 3개 미만이면 있는 연도만으로 계산(참고값) */
+    var t=0; ok.forEach(function(y,k){t+=y.score*(PERF_W[k]||0)});
+    best={total:r3(t),picked:ok.map(function(y){return y.i})};
+  }else if(ok.length>=3){
+    for(var a=0;a<ok.length;a++)for(var b2=a+1;b2<ok.length;b2++)for(var c=b2+1;c<ok.length;c++){
+      var combo=[ok[a],ok[b2],ok[c]];               /* 인덱스 순서 = 최근순 유지 */
+      var tt=combo[0].score*PERF_W[0]+combo[1].score*PERF_W[1]+combo[2].score*PERF_W[2];
+      if(tt>best.total)best={total:r3(tt),picked:combo.map(function(y){return y.i})};
+    }
+  }
+  return {on:true,total:clamp(best.total,0,PERF_MAX),max:PERF_MAX,
+          years:ys,picked:best.picked,usable:ok.length};
+}
+
+/* ── 최종 합산 ── */
+function calcAll(S){
+  var c=calcCareer(nn(S.career.teachY)*12+nn(S.career.teachM),
+                   nn(S.career.tempY)*12+nn(S.career.tempM));
+  var t=calcTraining(S.training), b=calcBonus(S.bonus), pf=calcPerf(S.perf);
+  var max=r3(c.max+t.max+b.max+pf.max);
+  return {career:c,training:t,bonus:b,perf:pf,
+    total:clamp(r3(c.total+t.total+b.total+pf.total),0,max), max:max};
+}
+</script>
+<script>
+/* ===================================================================
+   상태
+   =================================================================== */
+var _id=0; function nid(p){_id++;return p+_id}
+/* GitHub Pages 는 사용자명.github.io 라는 하나의 출처(origin)를 모든 저장소가
+   공유하므로, 다른 프로젝트와 키가 겹치지 않도록 충분히 구체적인 이름을 쓴다. */
+var SKEY="gg-vp-promotion-rating/state/v2";
+var SKEY_OLD="gg_vp_rating_v1";   /* 이전 버전 저장본 승계용 */
+function blank(){return {
+  dock:false,
+  roster:"promo",
+  career:{teachY:"",teachM:"",tempY:"",tempM:""},
+  training:{roster:"promo",qualGrade:"",qualScore:"",qualFull:"100",jobBest:"",jobCount:"0",
+            awards:[], degree:""},
+  bonus:{common:{research_school:{y:"",m:""},overseas:{y:"",m:""},
+                 credited_training:"",bullying:""},
+         selective:[]},
+  perf:{on:false,years:perfYears()}
+}}
+/* 최근 5개 학년도(최근 → 과거 순) */
+function perfYears(){
+  var y=new Date().getFullYear(), a=[];
+  for(var i=0;i<5;i++)a.push({label:(y-i-1)+"학년도",people:"",rank:""});
+  return a;
+}
+var S=blank();
+
+/* ── 저장 · 불러오기 · 초기화 ───────────────────────────────────────
+   이 파일은 서버 없이 동작하므로(GitHub Pages 포함) 저장은 두 갈래다.
+     1) 자동 저장 : 브라우저 저장소(localStorage) — 같은 PC·같은 브라우저에서만 유지
+     2) 파일 저장 : JSON 내려받기 — 다른 PC로 옮기거나 백업할 때
+   사생활 보호 모드나 쿠키 차단 환경에서는 1)이 막히므로, 그때는 화면에서
+   2)를 안내하고 자동 저장을 조용히 포기한다(계산은 그대로 동작). */
+var MSG="";
+var STORE_OK=null;          /* null = 아직 확인 전 */
+var LAST_SAVED="";          /* 마지막 자동 저장 시각 */
+
+function canStore(){
+  if(STORE_OK!==null)return STORE_OK;
+  try{
+    var k="__probe__";
+    window.localStorage.setItem(k,"1");
+    window.localStorage.removeItem(k);
+    STORE_OK=true;
+  }catch(e){ STORE_OK=false }
+  return STORE_OK;
+}
+function nowHM(){
+  var d=new Date(), p=function(n){return (n<10?"0":"")+n};
+  return p(d.getHours())+":"+p(d.getMinutes());
+}
+function saveLS(silent){
+  if(!canStore()){
+    if(!silent)MSG="이 브라우저는 저장이 차단되어 있습니다. ‘파일로 저장’을 이용하세요.";
+    return false;
+  }
+  try{
+    window.localStorage.setItem(SKEY,JSON.stringify(S));
+    LAST_SAVED=nowHM();
+    if(!silent)MSG="저장했습니다. 이 브라우저에서 다시 열면 그대로 불러옵니다.";
+    return true;
+  }catch(e){
+    /* 저장 공간 초과 등 */
+    STORE_OK=false;
+    if(!silent)MSG="저장에 실패했습니다(저장 공간 부족일 수 있습니다). ‘파일로 저장’을 이용하세요.";
+    return false;
+  }
+}
+function loadLS(){
+  if(!canStore())return false;
+  try{
+    var raw=window.localStorage.getItem(SKEY);
+    if(!raw){
+      /* 이전 버전 키로 저장해 둔 값이 있으면 한 번만 승계 */
+      var legacy=window.localStorage.getItem(SKEY_OLD);
+      if(!legacy)return false;
+      merge(JSON.parse(legacy));
+      window.localStorage.setItem(SKEY,JSON.stringify(S));
+      return true;
+    }
+    merge(JSON.parse(raw));
+    return true;
+  }catch(e){return false}
+}
+/* 입력이 멈춘 뒤 잠깐 있다가 조용히 저장 — 저장 버튼을 깜빡해도 값이 남는다 */
+var _autoT=null;
+function autoSave(){
+  if(!canStore())return;
+  if(_autoT)window.clearTimeout(_autoT);
+  _autoT=window.setTimeout(function(){
+    if(saveLS(true)){
+      var el=document.getElementById("saveState");
+      if(el)el.innerHTML=storeStatus();
+    }
+  },800);
+}
+function storeStatus(){
+  if(!canStore())
+    return '<span class="st off">자동 저장 불가 · 파일로 저장하세요</span>';
+  if(LAST_SAVED)
+    return '<span class="st ok">자동 저장됨 '+esc(LAST_SAVED)+'</span>';
+  return '<span class="st on">자동 저장 켜짐</span>';
+}
+/* 구형 저장본은 개월 수가 숫자 하나였으므로 {년, 월} 구조로 환산해 준다 */
+function normYM(v){
+  if(v&&typeof v==="object")return {y:v.y||"",m:v.m||""};
+  var t=nn(v); if(t<=0)return {y:"",m:""};
+  return {y:String(Math.floor(t/12)),m:String(Math.round(t%12))};
+}
+/* 저장된 구조가 현재 구조와 달라도 깨지지 않도록 병합 */
+function merge(o){
+  if(!o||typeof o!=="object")return;
+  var b=blank();
+  S=b;
+  if(o.roster)S.roster=o.roster;
+  if(o.career)for(var k in b.career)if(o.career[k]!==undefined)S.career[k]=o.career[k];
+  if(o.training){
+    for(var k2 in b.training)if(k2!=="awards"&&o.training[k2]!==undefined)S.training[k2]=o.training[k2];
+    if(Array.isArray(o.training.awards))
+      S.training.awards=o.training.awards.map(function(a){
+        return {id:nid("a"),scope:a.scope||"",grade:a.grade||"",people:a.people||"1"}});
+  }
+  S.training.roster=S.roster;
+  if(o.perf){
+    S.perf.on=!!o.perf.on;
+    if(Array.isArray(o.perf.years))
+      o.perf.years.forEach(function(y,i){
+        if(i<S.perf.years.length&&y){
+          if(y.label)S.perf.years[i].label=y.label;
+          S.perf.years[i].people=y.people||"";
+          S.perf.years[i].rank=y.rank||"";
+        }
+      });
+  }
+  if(o.bonus){
+    if(o.bonus.common)for(var k3 in b.bonus.common){
+      if(o.bonus.common[k3]===undefined)continue;
+      S.bonus.common[k3]=(typeof b.bonus.common[k3]==="object")
+        ? normYM(o.bonus.common[k3]) : o.bonus.common[k3];
+    }
+    if(Array.isArray(o.bonus.selective))
+      S.bonus.selective=o.bonus.selective.map(function(r){
+        return {uid:nid("s"),id:r.id||"",months:normYM(r.months)}});
+  }
+}
+function resetAll(){
+  S=blank();
+  LAST_SAVED="";
+  try{
+    window.localStorage.removeItem(SKEY);
+    window.localStorage.removeItem(SKEY_OLD);
+  }catch(e){}
+  MSG="입력값을 모두 초기화했습니다.";
+}
+function exportFile(){
+  try{
+    var blob=new window.Blob([JSON.stringify(S,null,2)],{type:"application/json"});
+    var url=window.URL.createObjectURL(blob);
+    var a=document.createElement("a");
+    a.href=url; a.download="교감승진_평정입력값.json";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    MSG="파일로 저장했습니다.";
+  }catch(e){MSG="파일 저장에 실패했습니다."}
+}
+function importFile(file){
+  var fr=new window.FileReader();
+  fr.onload=function(){
+    try{ merge(JSON.parse(fr.result)); MSG="파일에서 불러왔습니다."; draw(); }
+    catch(e){ MSG="파일을 읽을 수 없습니다. JSON 형식인지 확인해 주세요."; draw(); }
+  };
+  fr.readAsText(file);
+}
+var SEG={career:"var(--s1)",training:"var(--s2)",research:"var(--s3)",bonus:"var(--s4)",perf:"var(--s5)"};
+
+function setPath(p,v){
+  var s=p.split("."),o=S;
+  for(var i=0;i<s.length-1;i++){
+    var k=Array.isArray(o)?+s[i]:s[i];
+    if(o[k]===undefined||o[k]===null||typeof o[k]!=="object")o[k]={};  /* 중간 경로 자동 생성 */
+    o=o[k];
+  }
+  var last=s[s.length-1]; if(Array.isArray(o))o[+last]=v; else o[last]=v;
+}
+function idx(a,id){for(var i=0;i<a.length;i++)if(a[i].id===id)return i;return -1}
+
+/* ===================================================================
+   렌더 조각
+   =================================================================== */
+function F(lb,inner,hn){return '<label class="f"><span class="lb">'+esc(lb)+'</span>'+inner+
+  (hn?'<span class="hn">'+hn+'</span>':'')+'</label>'}
+function SEL(path,opts,cur,ph){
+  var h='<select data-path="'+esc(path)+'">';
+  if(ph)h+='<option value=""'+(cur===""?" selected":"")+'>'+esc(ph)+'</option>';
+  opts.forEach(function(o){
+    var v=String(o.v!==undefined?o.v:o), l=o.l!==undefined?o.l:String(o);
+    if(ph&&v==="")return;
+    h+='<option value="'+esc(v)+'"'+(String(cur)===v?" selected":"")+'>'+esc(l)+'</option>';
+  });
+  return h+'</select>';
+}
+function NUM(path,val,ph,mx){return '<input type="number" min="0"'+(mx?' max="'+mx+'"':'')+
+  ' data-path="'+esc(path)+'" value="'+esc(val)+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+'>'}
+function head(color,title,key,val,max){
+  return '<div class="chead"><div class="n"><span class="sw" style="background:'+color+'"></span>'+
+    '<h2>'+esc(title)+'</h2></div><div class="sc num"><b data-o="'+key+'">'+fmt(val)+'</b>'+
+    '<span> / '+max+'점</span></div></div>'}
+function note(t){return '<div class="note"><span class="d"></span><span>'+t+'</span></div>'}
+function yrs(n){var a=[];for(var i=0;i<=n;i++)a.push({v:String(i),l:i+"년"});return a}
+function mos(){var a=[];for(var i=0;i<12;i++)a.push({v:String(i),l:i+"개월"});return a}
+
+/* ── ① 교육경력 ── */
+function rCareer(R){
+  var C=R.career;
+  var h=head(SEG.career,"① 교육경력","career",C.total,70);
+  h+=note("별표1의 ‘직위’는 <b>평정 대상자의 현재 직위</b>를 뜻합니다. 교감 승진을 준비하는 분의 현 직위는 <b>교사</b>이므로 <b>교사 경력이 「가경력」</b>이고, 기간제·강사 경력이 「나경력」입니다. 따라서 <b>20년이면 70점 만점</b>(기본 64 + 초과 6)입니다.");
+  h+='<div class="grid g2" style="margin-top:14px">'+
+    F("교사 경력 (가경력)",'<div class="pair">'+SEL("career.teachY",yrs(45),S.career.teachY,"년 선택")+
+      SEL("career.teachM",mos(),S.career.teachM,"개월")+'</div>',
+      "교장·교감·장학사 경력, 임용 전 병역 기간도 포함. 휴직·정직 기간은 제외")+
+    F("기간제·강사 경력 (나경력)",'<div class="pair">'+SEL("career.tempY",yrs(20),S.career.tempY,"년 선택")+
+      SEL("career.tempM",mos(),S.career.tempM,"개월")+'</div>',"없으면 비워 두세요")+
+  '</div>';
+  h+='<div class="grid g2" style="margin-top:16px;background:var(--paper);border-radius:10px;padding:13px">'+
+    '<div><div class="hn" data-o="cbL">기본경력 '+fmt(C.basic.months,0)+' / 180개월</div>'+
+      '<div class="num" style="font-size:1.05rem;font-weight:700"><span data-o="cb">'+fmt(C.basic.score)+'</span>점 <span class="hn">/ 64점</span></div></div>'+
+    '<div><div class="hn" data-o="ceL">초과경력 '+fmt(C.excess.months,0)+' / 60개월</div>'+
+      '<div class="num" style="font-size:1.05rem;font-weight:700"><span data-o="ce">'+fmt(C.excess.score)+'</span>점 <span class="hn">/ 6점</span></div></div>'+
+  '</div>';
+  h+='<div class="hint" data-o="cOver">'+(C.overMonths>0.5?"20년(240개월)을 넘는 "+fmt(C.overMonths,0)+"개월은 평정에 반영되지 않습니다.":"")+'</div>';
+  return '<section class="card">'+h+'</section>';
+}
+
+/* ── ② 직무연수 (자격연수 포함) ── */
+function rTraining(R){
+  var T=R.training, t=S.training;
+  var h=head(SEG.training,"② 직무연수 · 자격연수","training",T.edu.score,27);
+  h+=note("직무연수 18점은 <b>성적평정 6점 + 이수실적 12점</b>(6점 × 최대 2회)으로 나뉩니다. 자격연수 9점도 같은 교육성적(27점)에 포함되므로 함께 넣었습니다 &mdash; 해당 없으면 비워 두세요.");
+  h+='<h3 class="h">직무연수 <span class="l">· 18점</span></h3><div class="grid g2">'+
+    F("인정 직무연수 건수",SEL("training.jobCount",
+      [0,1,2,3,4,5,6,7,8].map(function(n){return {v:String(n),l:n+"건"}}),t.jobCount),
+      "평정기준일부터 10년 이내 이수한 60시간 이상 연수")+
+    F("가장 좋은 연수의 이수성적",SEL("training.jobBest",JOB_OPTS,t.jobBest),
+      "이 1건이 성적평정(6점)에 반영됩니다")+
+  '</div>'+
+  '<div class="sub"><span class="v">성적평정 <span data-o="jg">'+fmt(T.job.grade)+'</span>점 + 이수실적 <span data-o="ju">'+fmt(T.job.units)+'</span>점(<span data-o="juc">'+T.job.unitCount+'</span>회)</span>'+
+  '<span class="v num">직무연수 <b style="color:var(--seal)" data-o="job">'+fmt(T.job.score)+'</b> / 18점</span></div>';
+
+  var RS=T.qual.roster;
+  h+='<h3 class="h">자격연수 <span class="l">· 9점</span></h3>'+
+    note("<b>명부에 따라 계수가 다릅니다.</b> 교감 <b>자격연수대상자</b> 명부는 1급 정교사 자격연수 성적에 <b>×0.025</b>, 교감 <b>승진후보자</b> 명부는 교감 자격연수 성적에 <b>×0.05</b>를 적용합니다(「교원 등의 연수에 관한 규정 시행규칙」 2012. 2. 9.).")+
+    '<div class="grid" style="margin-top:12px">'+
+    F("명부 구분",SEL("roster",[ROSTERS.target,ROSTERS.promo],S.roster),
+      "평정대상 연수: <b>"+esc(RS.src)+"</b>")+
+    '</div>'+
+    '<div class="grid g3" style="margin-top:12px">'+
+    F("연수 등급",SEL("training.qualGrade",QUAL_OPTS,t.qualGrade),"등급만 알아도 계산됩니다")+
+    F("연수성적 (선택)",NUM("training.qualScore",t.qualScore,"예: 92.5"),"입력하면 등급보다 우선 적용")+
+    F("성적 만점",NUM("training.qualFull",t.qualFull,"100"))+
+  '</div>'+
+  '<div class="sub"><span class="v" data-o="qb">'+esc(T.qual.basis||"미입력")+'</span>'+
+  '<span class="v num">자격연수 <b style="color:var(--seal)" data-o="qual">'+fmt(T.qual.score)+'</b> / 9점</span></div>'+
+  '<div class="hint" data-o="qw">'+qualWarn(T)+'</div>';
+  return '<section class="card">'+h+'</section>';
+}
+
+function qualWarn(T){
+  if(T.qual.none)return '연수성적이 만점의 <b>6할 미만</b>이므로 규정에 따라 <b>평정하지 않습니다</b>(0점).';
+  if(T.qual.floor)return '연수성적이 만점의 <b>8할 미만</b>이므로 규정에 따라 <b>8할(80%)로 평정</b>했습니다.';
+  return '';
+}
+
+/* ── ③ 연구실적 ── */
+function rResearch(R){
+  var T=R.training, t=S.training;
+  var h=head(SEG.research,"③ 연구실적","research",T.research.score,3);
+  h+=note("연구대회 입상과 학위 취득을 <b>합산해 3점까지</b> 인정합니다. 같은 학년도에 2건 이상 입상하면 가장 높은 1건만 인정되므로 <b>학년도마다 한 줄씩</b> 추가하세요. 공동 연구는 <b>2인 70% · 3인 50% · 4인 이상 30%</b>만 인정됩니다.");
+  h+='<h3 class="h">연구대회 입상</h3>';
+  t.awards.forEach(function(a,i){
+    var base=(a.scope&&a.grade)?COMP[a.scope][a.grade]:0;
+    var rate=coRate(a.people), p=base*rate;
+    h+='<div class="row r3">'+
+      F("대회 규모",SEL("training.awards."+i+".scope",
+        [{v:"national",l:"전국 규모"},{v:"provincial",l:"시·도 규모"}],a.scope,"선택"))+
+      F("입상 등급",SEL("training.awards."+i+".grade",
+        ["1","2","3"].map(function(g){return {v:g,l:g+"등급"+(a.scope?" ("+COMP[a.scope][g].toFixed(2)+"점)":"")}}),a.grade,"선택"))+
+      F("공동 연구 인원",SEL("training.awards."+i+".people",COAUTHOR,a.people||"1"))+
+      '<div style="display:flex;align-items:center;gap:8px">'+
+      '<span class="outv num">'+(rate<1&&base>0?fmt(base)+" × "+Math.round(rate*100)+"% = ":"")+fmt(p)+'점</span>'+
+      '<button class="btn danger" data-act="delAward" data-id="'+esc(a.id)+'">삭제</button></div>'+
+    '</div>';
+  });
+  h+='<button class="btn" data-act="addAward">＋ 입상 실적 추가</button>';
+  h+='<h3 class="h">학위 취득</h3>'+F("학위",SEL("training.degree",DEG,t.degree),
+    "자격연수 성적으로 이미 평정된 석사학위는 제외됩니다");
+  h+='<div class="sub"><span class="v" data-o="rraw">합산 '+fmt(T.research.rawSum)+'점</span>'+
+     '<span class="v num">연구실적 <b style="color:var(--seal)" data-o="research">'+fmt(T.research.score)+'</b> / 3점</span></div>';
+  return '<section class="card">'+h+'</section>';
+}
+</script>
+<script>
+/* ── ④ 가산점 ── */
+function rBonus(R){
+  var B=R.bonus, b=S.bonus;
+  var h=head(SEG.bonus,"④ 가산점","bonus",B.total,10);
+  h+=note("각 항목의 근무 기간을 <b>년 · 개월</b>로 넣으면 됩니다(13개월이면 1년 1개월). 공통 3.50 + 선택 7.50이지만 연구학교 중복분이 빠지므로 <b>총합은 10.00점</b>이 상한입니다.");
+
+  h+='<div class="sub"><span class="t">공통가산점</span><span class="v num"><b data-o="cmn">'+fmt(B.common.total)+'</b> / 3.50점</span></div><div class="grid g2">';
+  COMMON.forEach(function(it){
+    var inner, hint;
+    if(it.unit==="월"){
+      var v=b.common[it.id]||{y:"",m:""};
+      inner='<div class="ymrow">'+
+        '<div class="pair">'+
+          NUM("bonus.common."+it.id+".y",v.y,"0")+
+          NUM("bonus.common."+it.id+".m",v.m,"0")+
+        '</div>'+
+        '<span class="outv num" data-o="cb_'+it.id+'">→ '+fmt(B.common.detail[it.id])+'점</span></div>';
+      hint='<span data-o="cbl_'+it.id+'">'+(ymLabel(v)||"왼쪽 = 년, 오른쪽 = 개월")+'</span>';
+    }else{
+      inner='<div class="ymrow">'+NUM("bonus.common."+it.id,b.common[it.id],"0")+
+        '<span class="outv num" data-o="cb_'+it.id+'">→ '+fmt(B.common.detail[it.id])+'점</span></div>';
+      hint="인정 연도 수";
+    }
+    h+=F(it.l+" (상한 "+it.max.toFixed(2)+"점)",inner,hint);
+  });
+  h+='</div>';
+
+  h+='<div class="sub" style="margin-top:20px"><span class="t">선택가산점</span><span class="v num"><b data-o="sel">'+fmt(B.selective.total)+'</b> / 7.50점</span></div>';
+  b.selective.forEach(function(row,i){
+    var f=selItem(row.id);
+    var pts=f?toM(row.months)*f.it.rate:0;
+    var opts='';
+    SEL_GROUPS.forEach(function(g){
+      opts+='<optgroup label="'+esc(g.l)+'">';
+      g.items.forEach(function(it){
+        opts+='<option value="'+it.id+'"'+(row.id===it.id?" selected":"")+'>'+esc(it.l)+'</option>';
+      });
+      opts+='</optgroup>';
+    });
+    var mv=row.months||{y:"",m:""};
+    h+='<div class="row">'+
+      F("항목 선택",'<select data-path="bonus.selective.'+i+'.id"><option value="">선택하세요</option>'+opts+'</select>')+
+      F("근무 기간 (년 / 개월)",'<div class="pair">'+
+        NUM("bonus.selective."+i+".months.y",mv.y,"년")+
+        NUM("bonus.selective."+i+".months.m",mv.m,"개월")+'</div>',
+        '<span data-o="sbl_'+esc(row.uid)+'">'+(ymLabel(mv)||"왼쪽 = 년, 오른쪽 = 개월")+'</span>')+
+      '<div style="display:flex;align-items:center;gap:8px">'+
+      '<span class="outv num" data-o="sbp_'+esc(row.uid)+'">'+fmt(pts)+'점</span>'+
+      '<button class="btn danger" data-act="delSel" data-id="'+esc(row.uid)+'">삭제</button></div>'+
+    '</div>';
+  });
+  h+='<button class="btn" data-act="addSel">＋ 가산점 항목 추가</button>';
+  h+='<div style="margin-top:14px">';
+  SEL_GROUPS.forEach(function(g){
+    var v=B.selective.groups[g.id], hit=v>=g.cap-0.0005;
+    h+='<div class="li"><div><div class="ln">'+esc(g.l)+'</div></div>'+
+       '<b class="num'+(hit?" hit":"")+'" data-o="grp_'+g.id+'">'+fmt(v)+'<em> / '+g.cap.toFixed(2)+'</em></b></div>';
+  });
+  h+='</div>';
+  h+='<div class="hint" data-o="ovl">'+(B.shared.capped?
+    '연구학교 중복 조정: 공통 '+fmt(B.shared.commonV)+'점 + 선택 '+fmt(B.shared.selV)+'점이 합산 상한 1.00점을 넘어 <b>−'+fmt(B.shared.overlap)+'점</b> 차감되었습니다.':'')+'</div>';
+  return '<section class="card">'+h+'</section>';
+}
+
+/* ── 결과 내역서 ── */
+function capB(on){return on?'<span class="cap">⚠ 상한</span>':''}
+function LI(n,v,mx,note,cap){
+  return '<div class="li"><div><div class="ln">'+n+'</div>'+(note?'<div class="lnote">'+note+'</div>':'')+'</div>'+
+    '<div style="display:flex;align-items:center">'+capB(cap)+'<b class="num">'+fmt(v)+
+    (mx!=null?'<em> / '+fmtMax(mx)+'</em>':'')+'</b></div></div>'}
+function rResult(R){
+  var C=R.career,T=R.training,B=R.bonus;
+  var h='<div class="chead"><div class="n"><h2>산출 내역</h2></div>'+
+    '<button class="btn noprint" data-act="goPrint">출력하기</button></div>';
+  h+='<div style="background:var(--ink-900);border-radius:12px;padding:20px 14px;text-align:center;margin-bottom:16px">'+
+    '<div style="font-size:.73rem;color:rgba(255,255,255,.65);font-weight:500">'+
+      (R.perf.on?"합계 (근무성적평정 포함)":"합계 (근무성적평정 100점 제외)")+'</div>'+
+    '<div style="display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:3px">'+
+    '<b class="num" style="font-size:clamp(2.3rem,1.7rem + 3vw,3.2rem);font-weight:800;color:#fff;line-height:1">'+fmt(R.total)+'</b>'+
+    '<span class="num" style="font-size:1rem;color:rgba(255,255,255,.65)">/ '+R.max+'점</span></div></div>';
+  h+=LI("① 교육경력",C.total,C.max,"기본 "+fmt(C.basic.score)+" + 초과 "+fmt(C.excess.score)+" · 교사 경력은 가경력(별표1 교사 행)");
+  h+=LI("② 직무연수 · 자격연수",T.edu.score,T.edu.max,
+        "자격 "+fmt(T.qual.score)+" + 직무 "+fmt(T.job.score)+" (성적 "+fmt(T.job.grade)+" + 이수실적 "+fmt(T.job.units)+")",T.edu.capped);
+  h+=LI("③ 연구실적",T.research.score,T.research.max,"연구대회 + 학위 합산 "+fmt(T.research.rawSum)+"점",
+        T.research.rawSum>T.research.max+0.0005);
+  h+=LI("④ 가산점",B.total,B.max,"공통 "+fmt(B.common.total)+" + 선택 "+fmt(B.selective.total)+
+        (B.shared.capped?" − 중복 "+fmt(B.shared.overlap):""),B.capped||B.shared.capped);
+  if(R.perf.on)
+    h+=LI("⑤ 근무성적평정",R.perf.total,R.perf.max,perfBasis(R.perf));
+  h+='<div style="margin-top:14px">'+note("모든 항목에 규정상 만점 한도를 적용했습니다 &mdash; 가산점 총합 10.00점, 학점화 직무연수 1.00점, 연구학교 공통·선택 합산 1.00점, 연구실적 3.00점 등. 실제 평정점은 소속 학교의 평정권자 확인이 필요합니다.")+'</div>';
+  return '<section class="card" id="resultCard">'+h+'</section>';
+}
+
+/* ── ⑤ 근무성적평정 (선택 입력) ── */
+function rPerf(R){
+  var P=R.perf, on=S.perf.on;
+  var h='<section class="card">'+
+    '<div class="chead"><div class="n"><span class="sw" style="background:'+SEG.perf+'"></span>'+
+    '<h2>⑤ 근무성적평정 <span style="font-weight:400;font-size:.8rem;color:var(--ink-500)">· 선택 입력</span></h2></div>'+
+    '<div class="sc num">'+(on?'<b data-o="perf">'+fmt(P.total)+'</b><span> / 100점</span>'
+                              :'<span>미포함</span>')+'</div></div>';
+  h+='<label class="check"><input type="checkbox" data-path="perf.on"'+(on?" checked":"")+
+     '> <b>근무성적평정도 함께 계산하기</b></label>';
+  if(!on){
+    h+='<div class="hint">체크하면 최근 5개 학년도의 <b>평정 인원수</b>와 <b>본인 등수</b>를 입력하는 칸이 나타납니다. 포함하지 않으면 합계는 110점 만점으로 계산됩니다.</div>';
+    return h+'</section>';
+  }
+  h+=note("지침 135쪽: 명부 작성기준일부터 <b>5년 이내</b>에 평정한 합산점 중 <b>유리한 3년</b>을 골라 <b>34% · 33% · 33%</b>로 산정합니다. 아래에서 5개 학년도를 넣으면 가장 유리한 3개 조합을 자동으로 찾아 줍니다.");
+  h+='<div class="hint" style="margin-top:8px">각 학년도의 평정점은 지침 222~236쪽 <b>「근무성적평정 조정점 조견표」</b>에서 인원수·등수로 찾은 <b>조정점</b>입니다(지침: 최종 근무성적평정점 = 조정점). 인원 3~130명까지 지원하며, 징계·행정처분에 따른 감점은 반영되지 않습니다.</div>';
+  h+='<div style="margin-top:12px">';
+  P.years.forEach(function(y,i){
+    var picked=P.picked.indexOf(i)>=0;
+    h+='<div class="row r3'+(picked?" picked":"")+'" data-pyr="'+i+'">'+
+      F("학년도",'<input type="text" data-path="perf.years.'+i+'.label" value="'+esc(y.label)+'">')+
+      F("평정 인원수",NUM("perf.years."+i+".people",y.people,"예: 42"),"같은 학교 동일 직위 평정 대상 인원")+
+      F("본인 등수",NUM("perf.years."+i+".rank",y.rank,"예: 8"))+
+      '<div style="display:flex;align-items:center;gap:8px">'+
+      '<span class="outv num" data-o="py_'+i+'">'+
+        (y.score===null?(y.people||y.rank?"입력 확인":"—"):fmt(y.score,2)+"점"+(picked?" ✓":""))+
+      '</span></div>'+
+    '</div>';
+  });
+  h+='</div>';
+  h+='<div class="sub"><span class="v" data-o="pysel">'+perfBasis(P)+'</span>'+
+     '<span class="v num">근무성적평정점 <b style="color:var(--seal)" data-o="perf2">'+fmt(P.total)+'</b> / 100점</span></div>';
+  return h+'</section>';
+}
+function perfBasis(P){
+  if(!P.on)return "";
+  if(P.usable===0)return "인원수와 등수를 입력하세요";
+  if(P.usable<3)return "3개 학년도가 필요합니다 (현재 "+P.usable+"개 · 참고값)";
+  var names=P.picked.map(function(i){return esc(P.years[i].label)});
+  return "반영: "+names.join(" · ")+" (34% · 33% · 33%)";
+}
+
+/* ===================================================================
+   총평 분석 엔진 (오프라인 기본값) — 영역별 부족분과 보완 방법 산출
+   =================================================================== */
+function analyze(R){
+  var out=[], C=R.career, T=R.training, B=R.bonus;
+
+  /* ① 교육경력 */
+  var curM=nn(S.career.teachY)*12+nn(S.career.teachM)+nn(S.career.tempY)*12+nn(S.career.tempM);
+  var gapC=r3(C.max-C.total), aC=[];
+  if(gapC<=0.0005) aC.push("20년(240개월)을 채워 <b>만점</b>입니다. 더 쌓아도 점수는 오르지 않습니다.");
+  else{
+    var left=Math.max(0,240-curM), ly=Math.floor(left/12), lm=Math.round(left%12);
+    var lt=(ly>0?ly+"년":"")+(lm>0?(ly>0?" ":"")+lm+"개월":"")||"1개월 미만";
+    aC.push("20년까지 <b>"+lt+"</b> 남았습니다. 재직을 이어가면 자동으로 채워집니다.");
+    if(nn(S.career.tempY)*12+nn(S.career.tempM)>0)
+      aC.push("기간제·강사 경력은 나경력이라 월 환산이 낮습니다(0.3333 vs 교사 0.3555).");
+  }
+  out.push({key:"career",name:"교육경력",got:C.total,max:C.max,gap:gapC,acts:aC});
+
+  /* ② 직무연수 · 자격연수 */
+  var aT=[], gapT=r3(T.edu.max-T.edu.score);
+  var cnt=T.job.count, conv=T.job.conv;
+  if(cnt<3){
+    var more=3-cnt, addUnits=Math.min(more,2-T.job.unitCount), gain=6*Math.max(0,addUnits);
+    if(cnt===0) aT.push("60시간 이상 직무연수를 <b>3건</b> 이수하면 직무연수 18점 만점입니다(성적평정 6 + 이수실적 12).");
+    else if(gain>0) aT.push("직무연수를 <b>"+more+"건</b> 더 이수하면 이수실적으로 <b>+"+fmt(gain,2)+"점</b>입니다(건당 6점, 최대 2건).");
+  }
+  if(cnt>=1&&conv!==null&&conv<100)
+    aT.push("성적평정 대상 연수를 <b>95점 초과</b>로 받으면 <b>+"+fmt(6*(100-conv)/100,2)+"점</b>입니다(현재 환산 "+conv+"점).");
+  if(T.qual.none) aT.push("자격연수 성적이 만점의 6할 미만이라 <b>평정되지 않습니다</b>(9점 손실). 성적 확인이 필요합니다.");
+  else if(T.qual.floor) aT.push("자격연수 성적이 만점의 8할 미만이라 <b>8할로 보정</b>되었습니다.");
+  else if(T.qual.score>0&&T.qual.score<9) aT.push("자격연수는 이미 이수한 성적으로 확정되어 <b>더 올릴 수 없습니다</b>(현재 "+fmt(T.qual.score)+"점).");
+  if(!aT.length) aT.push("자격연수·직무연수 모두 <b>만점</b>입니다.");
+  out.push({key:"training",name:"직무연수 · 자격연수",got:T.edu.score,max:T.edu.max,gap:gapT,acts:aT});
+
+  /* ③ 연구실적 */
+  var aR=[], gapR=r3(T.research.max-T.research.score);
+  if(gapR<=0.0005) aR.push("3점 <b>만점</b>입니다.");
+  else{
+    aR.push("<b>"+fmt(gapR)+"점</b>이 비어 있습니다. 채우는 방법은 다음과 같습니다.");
+    aR.push("연구대회 입상 — 전국 1등급 1.50 / 2등급 1.25 / 3등급 1.00, 시·도 1등급 1.00 / 2등급 0.75 / 3등급 0.50 (학년도마다 1건)");
+    aR.push("학위 취득 — 박사(직무관련) 3.00 / 석사(직무관련) 1.50. 공동 연구는 2인 70% · 3인 50% · 4인 이상 30%만 인정됩니다.");
+  }
+  out.push({key:"research",name:"연구실적",got:T.research.score,max:T.research.max,gap:gapR,acts:aR});
+
+  /* ④ 가산점 */
+  var aB=[], gapB=r3(B.max-B.total), room=[];
+  SEL_GROUPS.forEach(function(g){
+    var head=r3(g.cap-B.selective.groups[g.id]);
+    if(head>0.0005){
+      var best=g.items.slice().sort(function(x,y){return y.rate-x.rate})[0];
+      room.push({label:g.l.replace(/\s*\(.*$/,""),head:head,item:best.l,months:Math.ceil(head/best.rate)});
+    }
+  });
+  room.sort(function(x,y){return y.head-x.head});
+  COMMON.forEach(function(it){
+    var head=r3(it.max-B.common.detail[it.id]);
+    if(head>0.0005&&it.unit==="년")
+      aB.push(it.l+" — <b>"+fmt(head)+"점</b> 여유 (연 "+it.rate.toFixed(2)+"점, 약 "+Math.ceil(head/it.rate)+"년분)");
+  });
+  room.slice(0,3).forEach(function(r){
+    aB.push(r.label+" — <b>"+fmt(r.head)+"점</b> 여유 (예: "+r.item+" 기준 약 "+Math.floor(r.months/12)+"년 "+(r.months%12)+"개월)");
+  });
+  if(B.shared.capped) aB.push("연구학교 가산점은 공통·선택 합산 1.00점이 상한이라 <b>"+fmt(B.shared.overlap)+"점이 차감</b>되었습니다. 이 항목에 더 투자해도 오르지 않습니다.");
+  if(!aB.length) aB.push("가산점 10.00점 <b>만점</b>입니다.");
+  out.push({key:"bonus",name:"가산점",got:B.total,max:B.max,gap:gapB,acts:aB});
+
+  /* ⑤ 근무성적 (선택) */
+  if(R.perf.on){
+    var P=R.perf, aP=[], gapP=r3(P.max-P.total);
+    if(P.usable<3) aP.push("최근 5년 중 <b>3개 학년도</b>를 입력해야 정식 산정이 됩니다(현재 "+P.usable+"개).");
+    else{
+      var ps=P.picked.map(function(i){return P.years[i]});
+      var worst=ps.slice().sort(function(a,b){return a.score-b.score})[0];
+      aP.push("반영된 3년 중 가장 낮은 해는 <b>"+esc(worst.label)+"</b> ("+fmt(worst.score,2)+"점, "+worst.people+"명 중 "+worst.rank+"등)입니다.");
+      var n=nn(ps[0].people);
+      if(n>=3&&n<=130) aP.push("가장 가까운 연도의 가중치가 34%로 가장 큽니다. 인원 "+n+"명 기준 <b>"+Math.max(1,Math.floor(n*0.3))+"등 이내</b>면 ‘수’ 등급(95점 이상)입니다.");
+      aP.push("5년 중 유리한 3년만 반영되므로 한 해가 낮아도 이후 2년을 올리면 교체됩니다.");
+    }
+    out.push({key:"perf",name:"근무성적평정",got:P.total,max:P.max,gap:gapP,acts:aP});
+  }
+  return out;
+}
+function topPriority(an){
+  return an.filter(function(a){return a.key!=="career"&&a.gap>0.0005})
+           .sort(function(x,y){return y.gap-x.gap}).slice(0,3);
+}
+function overallText(R,an){
+  var pct=R.max>0?R.total/R.max*100:0;
+  var done=an.filter(function(a){return a.gap<=0.0005}).length;
+  var t="현재 <b>"+fmt(R.total)+"점 / "+R.max+"점</b>으로 달성률은 <b>"+pct.toFixed(1)+"%</b>입니다. 평정 영역 "+an.length+"개 중 <b>"+done+"개</b>가 만점입니다. ";
+  var tp=topPriority(an);
+  if(!tp.length) t+="보완이 필요한 영역이 없습니다.";
+  else t+="남은 점수가 큰 순서는 "+tp.map(function(a){return a.name+" "+fmt(a.gap)+"점";}).join(", ")+" 입니다.";
+  return t;
+}
+
+/* ── 저장 · 초기화 툴바 ── */
+function rTools(){
+  var h='<section class="card noprint" style="padding:14px">'+
+    '<div class="tools">'+
+      '<button class="btn dark" data-act="save">저장</button>'+
+      '<button class="btn" data-act="reload">불러오기</button>'+
+      '<button class="btn" data-act="export">파일로 저장</button>'+
+      '<label class="btn" style="cursor:pointer">파일 불러오기'+
+        '<input type="file" accept=".json,application/json" id="fileIn" style="display:none"></label>'+
+      '<span class="savestate" id="saveState">'+storeStatus()+'</span>'+
+      '<button class="btn danger" data-act="reset" style="margin-left:auto">전체 초기화</button>'+
+    '</div>';
+  var guide = canStore()
+    ? "입력하는 대로 <b>이 브라우저에 자동 저장</b>되어 다음에 열면 그대로 이어집니다. 다른 PC에서 쓰거나 백업하려면 <b>파일로 저장</b>을 이용하세요."
+    : "이 브라우저는 저장이 차단되어 있어(사생활 보호 모드이거나 사이트 데이터 차단) 자동 저장이 되지 않습니다. <b>파일로 저장</b>으로 보관하세요.";
+  h+='<div class="hint" id="msg">'+(MSG?esc(MSG):guide)+'</div>';
+  return h+'</section>';
+}
+
+/* ── 출력(인쇄) 패널 — 화면에 보이는 조작부 ── */
+function rPrintPanel(R){
+  var h='<section class="card noprint">'+
+    '<div class="chead"><div class="n"><h2>출력 (인쇄 · PDF)</h2></div>'+
+    '<button class="btn dark" data-act="print">요약표 출력</button></div>';
+  h+=note("<b>영역별 요약 → 달성률 그래프 → 입력 내역 전체 → 총계 → 총평</b> 순서로 출력됩니다. 아래 미리보기가 실제 출력물과 같습니다.");
+  h+='<div class="sub" style="margin-top:16px"><span class="t">출력 미리보기</span>'+
+     '<span class="v">A4 세로 · 2~3장</span></div>';
+  h+='<div class="preview">'+rSheet(R)+'</div>';
+  return h+'</section>';
+}
+
+/* ===================================================================
+   인쇄용 요약 시트 — 화면에서는 숨고 인쇄할 때만 나타난다.
+   영역별 점수 요약 → 총계 → 총평(분석) 순서.
+   =================================================================== */
+function rSheet(R){
+  var an=analyze(R);
+  var h='<section class="sheet" id="sheet">';
+
+  /* ── 머리말 ── */
+  h+='<div class="sh-head"><div><div class="sh-k">경기도교육청 · 2026. 2. 28. 평정 기준 · 교사 → 교감 승진후보자</div>'+
+     '<h2 class="sh-t">승진 평정 요약표</h2></div>'+
+     '<div class="sh-d num">'+esc(todayStr())+'</div></div>';
+
+  /* ── 총계 (대표 수치 + 전체 달성 미터) ── */
+  var tp=R.max>0?(R.total/R.max*100):0;
+  h+='<div class="hero">'+
+       '<div class="hero-l">'+
+         '<div class="hero-k">합계</div>'+
+         '<div class="hero-v"><b class="num">'+fmt(R.total)+'</b><span class="num"> / '+fmtMax(R.max)+'점</span></div>'+
+         '<div class="hero-s num">달성률 '+tp.toFixed(1)+'% · 잔여 '+fmt(r3(R.max-R.total))+'점</div>'+
+       '</div>'+
+       '<div class="hero-r">'+meter(tp,"var(--s4)",null,true)+'</div>'+
+     '</div>';
+  if(!R.perf.on) h+='<div class="sh-note">※ 근무성적평정(100점)을 제외한 합계입니다.</div>';
+
+  /* ── 1. 영역별 요약표 (표 + 미터) ── */
+  h+=blk("1","영역별 평정 점수");
+  var rows="";
+  an.forEach(function(a,i){
+    var pct=a.max>0?(a.got/a.max*100):0;
+    rows+='<tr>'+
+      '<td class="c-no">'+"①②③④⑤".charAt(i)+'</td>'+
+      '<td class="c-nm"><span class="sw" style="background:'+SEG[a.key]+'"></span>'+esc(a.name)+'</td>'+
+      '<td class="c-v num">'+fmt(a.got)+'</td>'+
+      '<td class="c-m num">'+fmtMax(a.max)+'</td>'+
+      '<td class="c-g num">'+(a.gap<=0.0005?'<span class="full">만점</span>':'−'+fmt(a.gap))+'</td>'+
+      '<td class="c-b">'+meter(pct,SEG[a.key],pct.toFixed(1)+'%')+'</td>'+
+    '</tr>';
+  });
+  h+='<table class="sh-tb"><thead><tr>'+
+     '<th></th><th>평정 영역</th><th class="num">취득</th><th class="num">만점</th>'+
+     '<th class="num">잔여</th><th>달성률</th>'+
+     '</tr></thead><tbody>'+rows+'</tbody>'+
+     '<tfoot><tr><td></td><td>총계</td>'+
+       '<td class="num">'+fmt(R.total)+'</td>'+
+       '<td class="num">'+fmtMax(R.max)+'</td>'+
+       '<td class="num">'+(R.max-R.total<=0.0005?'<span class="full">만점</span>':'−'+fmt(r3(R.max-R.total)))+'</td>'+
+       '<td class="num">'+tp.toFixed(1)+'%</td>'+
+     '</tr></tfoot></table>';
+
+  /* ── 2. 영역별 점수 구성 (만점 대비 폭을 실제 배점에 비례시킨 그래프) ── */
+  h+=blk("2","영역별 점수 구성");
+  h+='<div class="chart-note">막대의 전체 길이가 그 영역의 만점이고, 진한 부분이 취득한 점수입니다. '+
+     '영역마다 배점이 다르므로 길이를 같은 자로 재어 비교할 수 있습니다.</div>';
+  var maxMax=0; an.forEach(function(a){ if(a.max>maxMax)maxMax=a.max });
+  h+='<div class="gchart">';
+  an.forEach(function(a){
+    var wTrack = maxMax>0 ? (a.max/maxMax*100) : 0;         /* 만점 비율 = 트랙 길이 */
+    var wFill  = a.max>0  ? (a.got/a.max*100) : 0;          /* 트랙 안에서의 취득 비율 */
+    h+='<div class="grow">'+
+         '<div class="glab"><span class="sw" style="background:'+SEG[a.key]+'"></span>'+esc(a.name)+'</div>'+
+         '<div class="gbar">'+
+           '<div class="gwrap">'+
+             '<div class="gtrack" style="width:'+wTrack.toFixed(2)+'%">'+
+               '<i style="width:'+wFill.toFixed(2)+'%;background:'+SEG[a.key]+'"></i>'+
+             '</div>'+
+           '</div>'+
+           '<span class="gval num">'+fmt(a.got)+' <em>/ '+fmtMax(a.max)+'</em></span>'+
+         '</div>'+
+       '</div>';
+  });
+  h+='</div>';
+
+  /* ── 3. 입력 내역 전체 ── */
+  h+=blk("3","입력 내역");
+  h+=dCareer(R)+dTraining(R)+dResearch(R)+dBonus(R)+(R.perf.on?dPerf(R):"");
+
+  /* ── 4. 총평 ── */
+  h+=blk("4","총평");
+  h+='<div class="sh-rv"><div id="sheetReview">'+reviewHTML(R,an)+'</div></div>';
+
+  h+='<div class="sh-ft">자가진단 참고용 문서입니다. 실제 평정점은 소속 학교(기관) 평정권자의 확인과 증빙서류 심사를 거쳐 확정됩니다.</div>';
+  return h+'</section>';
+}
+
+/* 구역 제목 */
+function blk(no,title){
+  return '<div class="sh-blk"><span class="sh-bn">'+esc(no)+'</span>'+esc(title)+'</div>';
+}
+/* 미터 — 비율 막대. 색만으로 뜻을 전하지 않도록 항상 숫자를 함께 둔다. */
+function meter(pct,color,label,big){
+  var w=Math.max(0,Math.min(100,pct));
+  return '<span class="mt'+(big?" big":"")+'">'+
+           '<span class="mt-t"><i style="width:'+w.toFixed(2)+'%;background:'+color+'"></i></span>'+
+           (label?'<span class="mt-l num">'+label+'</span>':'')+
+         '</span>';
+}
+/* 상세표 뼈대 */
+function dTbl(title,sub,head,rows,foot){
+  var h='<div class="dt"><div class="dt-h"><b>'+title+'</b>'+(sub?'<span>'+sub+'</span>':'')+'</div>'+
+        '<table class="dt-tb"><thead><tr>';
+  head.forEach(function(c){ h+='<th'+(c.n?' class="num"':'')+(c.w?' style="width:'+c.w+'"':'')+'>'+esc(c.t)+'</th>' });
+  h+='</tr></thead><tbody>';
+  if(!rows.length) h+='<tr><td class="empty" colspan="'+head.length+'">입력된 내용이 없습니다.</td></tr>';
+  rows.forEach(function(r){
+    h+='<tr'+(r.muted?' class="muted"':(r.sub?' class="gsub"':''))+'>';
+    r.c.forEach(function(c,i){ h+='<td'+(head[i]&&head[i].n?' class="num"':'')+'>'+c+'</td>' });
+    h+='</tr>';
+  });
+  h+='</tbody>';
+  if(foot){
+    h+='<tfoot><tr>';
+    foot.forEach(function(c,i){
+      if(c===null)return;                                  /* null = 앞 칸에 병합됨 */
+      var span=1;
+      while(i+span<foot.length && foot[i+span]===null) span++;
+      h+='<td'+(head[i]&&head[i].n?' class="num"':'')+(span>1?' colspan="'+span+'"':'')+'>'+c+'</td>';
+    });
+    h+='</tr></tfoot>';
+  }
+  return h+'</table></div>';
+}
+function ymText(mo){
+  mo=Math.round(mo);
+  if(mo<=0)return "—";
+  var y=Math.floor(mo/12), m=mo%12;
+  return (y>0?y+"년":"")+(m>0?(y>0?" ":"")+m+"개월":"")+" ("+mo+"개월)";
+}
+
+/* ── ① 교육경력 상세 ── */
+function dCareer(R){
+  var C=R.career, rows=[];
+  rows.push({c:["교사 경력 <b>(가경력)</b>", ymText(C.inGa), "월 0.3555", "—"]});
+  rows.push({c:["기간제·강사 <b>(나경력)</b>", ymText(C.inNa), "월 0.3333", "—"]});
+  var bg=C.basic.by["가"], bn=C.basic.by["나"];
+  rows.push({c:["기본경력 (15년 구간)",
+                (bg>0.5?"가 "+Math.round(bg)+"개월":"")+(bg>0.5&&bn>0.5?" + ":"")+(bn>0.5?"나 "+Math.round(bn)+"개월":"")||"—",
+                "상한 "+fmtMax(C.basic.max),
+                '<b>'+fmt(C.basic.score)+'</b>']});
+  var eg=C.excess.by["가"], en=C.excess.by["나"];
+  rows.push({c:["초과경력 (5년 구간)",
+                (eg>0.5?"가 "+Math.round(eg)+"개월":"")+(eg>0.5&&en>0.5?" + ":"")+(en>0.5?"나 "+Math.round(en)+"개월":"")||"—",
+                "상한 "+fmtMax(C.excess.max),
+                '<b>'+fmt(C.excess.score)+'</b>']});
+  if(C.overMonths>0.5)
+    rows.push({muted:true,c:["20년 초과분 (미반영)", ymText(C.overMonths), "평정 제외", "—"]});
+  return dTbl("① 교육경력","별표1 교사 행 · 총 20년(기본 15 + 초과 5)",
+    [{t:"구분",w:"34%"},{t:"기간"},{t:"환산 기준"},{t:"평정점",n:1,w:"16%"}],
+    rows, ["합계", null, null, '<b>'+fmt(C.total)+'</b> / '+fmtMax(C.max)]);
+}
+
+/* ── ② 직무연수 · 자격연수 상세 ── */
+function dTraining(R){
+  var T=R.training, t=S.training, rows=[];
+  var RS=T.qual.roster;
+  rows.push({c:["자격연수",
+                esc(RS.src)+" · "+esc(T.qual.basis||"미입력"),
+                esc(RS.formula),
+                '<b>'+fmt(T.qual.score)+'</b>']});
+  if(T.qual.none) rows.push({muted:true,c:["","만점의 6할 미만 → 평정하지 않음","","0.000"]});
+  else if(T.qual.floor) rows.push({muted:true,c:["","만점의 8할 미만 → 8할로 보정","",""]});
+
+  var cnt=T.job.count, conv=T.job.conv;
+  rows.push({c:["직무연수 — 성적평정",
+                cnt>0?("인정 "+cnt+"건 중 최고 성적 1건"):"—",
+                conv!==null?("6점 × 환산 "+conv+"/100"):"—",
+                '<b>'+fmt(T.job.grade)+'</b>']});
+  rows.push({c:["직무연수 — 이수실적",
+                T.job.unitCount>0?(T.job.unitCount+"건 인정 (최대 2건)"):"—",
+                "6점 × "+T.job.unitCount+"건",
+                '<b>'+fmt(T.job.units)+'</b>']});
+  return dTbl("② 직무연수 · 자격연수","교육성적 27점 = 자격연수 9 + 직무연수 18",
+    [{t:"구분",w:"26%"},{t:"입력"},{t:"산식"},{t:"평정점",n:1,w:"16%"}],
+    rows, ["교육성적 합계", null, null, '<b>'+fmt(T.edu.score)+'</b> / '+fmtMax(T.edu.max)]);
+}
+
+/* ── ③ 연구실적 상세 ── */
+function dResearch(R){
+  var T=R.training, t=S.training, rows=[];
+  t.awards.forEach(function(a,i){
+    if(!a.scope||!a.grade){ rows.push({muted:true,c:["연구대회 "+(i+1),"항목 미선택","","—"]}); return }
+    var base=COMP[a.scope][a.grade], rate=coRate(a.people);
+    var co=COAUTHOR.filter(function(x){return x.v===String(a.people||"1")})[0];
+    rows.push({c:["연구대회 "+(i+1),
+      (a.scope==="national"?"전국 규모":"시·도 규모")+" "+a.grade+"등급",
+      fmtMax(base)+"점"+(rate<1?(" × "+esc(co?co.l:"")) : " (단독)"),
+      '<b>'+fmt(base*rate)+'</b>']});
+  });
+  var dg=DEG.filter(function(x){return x.v===t.degree})[0];
+  if(dg&&dg.p>0) rows.push({c:["학위 취득", esc(dg.l.replace(/\s*\(.*$/,"")), fmtMax(dg.p)+"점", '<b>'+fmt(dg.p)+'</b>']});
+
+  var capped = T.research.rawSum > T.research.max+0.0005;
+  var foot = ["합계","", capped?('<span class="cap">⚠ '+fmt(T.research.rawSum)+' → 3.00 상한</span>'):"",
+              '<b>'+fmt(T.research.score)+'</b> / '+fmtMax(T.research.max)];
+  return dTbl("③ 연구실적","연구대회 입상 + 학위 취득, 합산 3점 상한",
+    [{t:"구분",w:"26%"},{t:"내용"},{t:"기본점 · 공동 지분"},{t:"인정점",n:1,w:"16%"}],
+    rows, foot);
+}
+
+/* ── ④ 가산점 상세 ── */
+function dBonus(R){
+  var B=R.bonus, b=S.bonus, h="";
+
+  /* 공통가산점 */
+  var cr=[];
+  COMMON.forEach(function(it){
+    var v=b.common[it.id];
+    var qty=(it.unit==="월")?toM(v):nn(v);
+    var got=B.common.detail[it.id];
+    var hit=got>=it.max-0.0005 && qty>0;
+    cr.push({muted:qty<=0, c:[
+      esc(it.l),
+      qty>0?((it.unit==="월")?ymText(qty):(qty+"년")):"—",
+      (it.unit==="월"?("월 "+it.rate):("연 "+it.rate.toFixed(2)))+"점 · 상한 "+it.max.toFixed(2),
+      (hit?'<span class="cap">상한</span> ':'')+'<b>'+fmt(got)+'</b>'
+    ]});
+  });
+  h+=dTbl("④-1 공통가산점","상한 3.50점",
+    [{t:"항목",w:"34%"},{t:"기간"},{t:"기준"},{t:"인정점",n:1,w:"18%"}],
+    cr, ["소계", null, null, '<b>'+fmt(B.common.total)+'</b> / '+fmtMax(LIM.common)]);
+
+  /* 선택가산점 — 그룹별로 묶어 표시 */
+  var sr=[];
+  SEL_GROUPS.forEach(function(g){
+    var mine=b.selective.filter(function(r){ var f=selItem(r.id); return f&&f.g.id===g.id });
+    if(!mine.length)return;
+    mine.forEach(function(r){
+      var f=selItem(r.id), mo=toM(r.months);
+      sr.push({muted:mo<=0, c:[
+        esc(g.l.replace(/\s*\(.*$/,"")),
+        esc(f.it.l),
+        mo>0?ymText(mo):"—",
+        "월 "+f.it.rate,
+        '<b>'+fmt(mo*f.it.rate)+'</b>'
+      ]});
+    });
+    var gv=B.selective.groups[g.id], hit=gv>=g.cap-0.0005;
+    sr.push({sub:true,c:["",'<i>그룹 소계</i>',"",
+      '<i>상한 '+g.cap.toFixed(2)+'</i>',
+      (hit?'<span class="cap">상한</span> ':'')+'<b>'+fmt(gv)+'</b>']});
+  });
+  h+=dTbl("④-2 선택가산점","상한 7.50점 · 그룹별 상한 별도 적용",
+    [{t:"그룹",w:"24%"},{t:"항목"},{t:"기간"},{t:"기준"},{t:"인정점",n:1,w:"16%"}],
+    sr, ["소계", null, null, null, '<b>'+fmt(B.selective.total)+'</b> / '+fmtMax(LIM.selective)]);
+
+  /* 합산 + 교차 상한 */
+  var fr=[];
+  fr.push({c:["공통가산점 소계","", '<b>'+fmt(B.common.total)+'</b>']});
+  fr.push({c:["선택가산점 소계","", '<b>'+fmt(B.selective.total)+'</b>']});
+  if(B.shared.capped)
+    fr.push({c:['교차 상한 조정 <span class="cap">⚠</span>',
+      "연구학교(공통 "+fmt(B.shared.commonV)+") + 선도·중심학교(선택 "+fmt(B.shared.selV)+")가 합산 상한 "+B.shared.cap.toFixed(2)+"점 초과",
+      '<b>−'+fmt(B.shared.overlap)+'</b>']});
+  h+=dTbl("④-3 가산점 합계","총합 10.00점 상한",
+    [{t:"구분",w:"26%"},{t:"비고"},{t:"점수",n:1,w:"18%"}],
+    fr, ["합계", null, '<b>'+fmt(B.total)+'</b> / '+fmtMax(B.max)]);
+  return h;
+}
+
+/* ── ⑤ 근무성적평정 상세 ── */
+function dPerf(R){
+  var P=R.perf, rows=[];
+  P.years.forEach(function(y,i){
+    var used=P.picked.indexOf(i)>=0;
+    var wIdx=P.picked.indexOf(i);
+    rows.push({muted:!used, c:[
+      esc(y.label||("연도 "+(i+1))),
+      nn(y.people)>0?(y.people+"명"):"—",
+      nn(y.rank)>0?(y.rank+"등"):"—",
+      y.score===null?'<span class="dim">—</span>':fmt(y.score,2),
+      used?('<b>반영</b> ×'+Math.round(["34","33","33"][wIdx])+'%'):'<span class="dim">미반영</span>'
+    ]});
+  });
+  var calc="";
+  if(P.usable>=3){
+    var ps=P.picked.map(function(i){return P.years[i]});
+    calc=ps.map(function(y,k){ return fmt(y.score,2)+"×"+["34","33","33"][k]+"%" }).join(" + ");
+  }
+  return dTbl("⑤ 근무성적평정","최근 5년 중 유리한 3년 · 34% · 33% · 33%",
+    [{t:"학년도",w:"22%"},{t:"평정 인원",n:1},{t:"본인 등수",n:1},{t:"조정점",n:1},{t:"반영",w:"22%"}],
+    rows, [(calc?('산식 <span class="fml num">'+calc+'</span>'):"합계"), null, null, null,
+           '<b>'+fmt(P.total)+'</b> / '+fmtMax(P.max)]);
+}
+
+function todayStr(){
+  var d=new Date();
+  return d.getFullYear()+". "+(d.getMonth()+1)+". "+d.getDate()+". 기준";
+}
+/* 총평 본문 — AI 총평이 있으면 그것을, 없으면 내장 분석을 쓴다 */
+function reviewHTML(R,an){
+  var h='<p class="rv-sum">'+overallText(R,an)+'</p>';
+  var tp=topPriority(an);
+  if(tp.length){
+    h+='<div class="rv-pri"><b>우선 보완 영역</b><ol>';
+    tp.forEach(function(a){h+='<li>'+esc(a.name)+' <span class="num">(−'+fmt(a.gap)+'점)</span></li>'});
+    h+='</ol></div>';
+  }
+  h+='<div class="rv-det">';
+  an.forEach(function(a){
+    h+='<div class="rv-it"><div class="rv-h"><span class="sw" style="background:'+SEG[a.key]+'"></span>'+
+       esc(a.name)+' <span class="num">'+fmt(a.got)+' / '+fmtMax(a.max)+'</span></div><ul>';
+    a.acts.forEach(function(x){h+='<li>'+x+'</li>'});
+    h+='</ul></div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+/* ── 요약판 ── */
+function barH(R){
+  var segs=[["career",R.career.total],["training",R.training.edu.score],
+            ["research",R.training.research.score],["bonus",R.bonus.total]];
+  if(R.perf.on)segs.push(["perf",R.perf.total]);
+  return segs.map(function(s){return '<i style="width:'+(R.max>0?Math.max(s[1],0)/R.max*100:0)+'%;background:'+SEG[s[0]]+'"></i>'}).join("");
+}
+function lgH(R){
+  var rows=[["career","교육경력",R.career.total,70],["training","직무·자격연수",R.training.edu.score,27],
+            ["research","연구실적",R.training.research.score,3],["bonus","가산점",R.bonus.total,10]];
+  if(R.perf.on)rows.push(["perf","근무성적",R.perf.total,100]);
+  return rows.map(function(r){return '<div class="r"><span class="nm"><span class="sw" style="background:'+SEG[r[0]]+'"></span>'+r[1]+
+      '</span><span class="vv num">'+fmt(r[2])+' <em>/ '+r[3]+'</em></span></div>'}).join("");
+}
+function rPanel(R){
+  return '<div class="k">실시간 평정 집계</div><div class="big"><b class="num">'+fmt(R.total)+
+    '</b><span class="num">/ '+R.max+'점</span></div><div class="bar">'+barH(R)+'</div>'+
+    '<div class="lg">'+lgH(R)+'</div>'+
+    '<div class="disc">'+(R.perf.on?"근무성적평정을 포함한 합계입니다."
+      :"근무성적평정 100점은 제외한 합계입니다.")+
+      ' 자가진단 참고용이며 실제 평정점은 평정권자 확인이 필요합니다.</div>';
+}
+</script>
+<script>
+/* ===================================================================
+   렌더 사이클 — draw(구조 변경) / live(타이핑 중 점수만 갱신)
+   =================================================================== */
+var $=function(s){return document.querySelector(s)};
+function O(k,txt){var e=document.querySelector('[data-o="'+k+'"]');if(e)e.innerHTML=txt}
+function draw(){
+  var R=calcAll(S);
+  $("#main").innerHTML=rTools()+rCareer(R)+rTraining(R)+rResearch(R)+rBonus(R)+rPerf(R)+rResult(R)+rPrintPanel(R);
+  var fi=document.getElementById("fileIn");
+  if(fi)fi.addEventListener("change",function(e){
+    if(e.target.files&&e.target.files[0])importFile(e.target.files[0]);
+  });
+  MSG="";
+  $("#panel").innerHTML=rPanel(R);
+  dock(R);
+}
+function dock(R){
+  $("#dT").textContent=fmt(R.total);
+  $("#dM").textContent="/ "+R.max+"점";
+  $("#dB").innerHTML=barH(R);
+  $("#dL").innerHTML=lgH(R);
+}
+function live(){
+  var R=calcAll(S), C=R.career, T=R.training, B=R.bonus;
+  O("career",fmt(C.total)); O("cb",fmt(C.basic.score)); O("ce",fmt(C.excess.score));
+  O("cbL","기본경력 "+fmt(C.basic.months,0)+" / 180개월");
+  O("ceL","초과경력 "+fmt(C.excess.months,0)+" / 60개월");
+  O("cOver",C.overMonths>0.5?"20년(240개월)을 넘는 "+fmt(C.overMonths,0)+"개월은 평정에 반영되지 않습니다.":"");
+  O("training",fmt(T.edu.score)); O("qual",fmt(T.qual.score)); O("job",fmt(T.job.score));
+  O("jg",fmt(T.job.grade)); O("ju",fmt(T.job.units)); O("juc",T.job.unitCount);
+  O("qb",esc(T.qual.basis||"미입력")); O("qw",qualWarn(T));
+  O("research",fmt(T.research.score)); O("rraw","합산 "+fmt(T.research.rawSum)+"점");
+  O("bonus",fmt(B.total)); O("cmn",fmt(B.common.total)); O("sel",fmt(B.selective.total));
+  if(R.perf.on){
+    O("perf",fmt(R.perf.total)); O("perf2",fmt(R.perf.total)); O("pysel",perfBasis(R.perf));
+    R.perf.years.forEach(function(y,i){
+      var picked=R.perf.picked.indexOf(i)>=0;
+      O("py_"+i,y.score===null?((y.people||y.rank)?"입력 확인":"—"):fmt(y.score,2)+"점"+(picked?" ✓":""));
+      var card=document.querySelector('[data-pyr="'+i+'"]');
+      if(card)card.classList.toggle("picked",picked);
+    });
+  }
+  COMMON.forEach(function(it){
+    O("cb_"+it.id,"→ "+fmt(B.common.detail[it.id])+"점");
+    if(it.unit==="월")O("cbl_"+it.id,ymLabel(S.bonus.common[it.id])||"왼쪽 = 년, 오른쪽 = 개월");
+  });
+  S.bonus.selective.forEach(function(row){
+    O("sbl_"+row.uid,ymLabel(row.months)||"왼쪽 = 년, 오른쪽 = 개월");
+    var ff=selItem(row.id);
+    O("sbp_"+row.uid,fmt(ff?toM(row.months)*ff.it.rate:0)+"점");
+  });
+  SEL_GROUPS.forEach(function(g){
+    var v=B.selective.groups[g.id];
+    O("grp_"+g.id,fmt(v)+'<em> / '+g.cap.toFixed(2)+'</em>');
+    var e=document.querySelector('[data-o="grp_'+g.id+'"]');
+    if(e)e.classList.toggle("hit",v>=g.cap-0.0005);
+  });
+  O("ovl",B.shared.capped?'연구학교 중복 조정: 공통 '+fmt(B.shared.commonV)+'점 + 선택 '+fmt(B.shared.selV)+
+    '점이 합산 상한 1.00점을 넘어 <b>−'+fmt(B.shared.overlap)+'점</b> 차감되었습니다.':'');
+  $("#panel").innerHTML=rPanel(R);
+  dock(R);
+  /* 결과 내역서는 값이 모두 바뀌므로 통째로 다시 그림 (입력칸이 없어 포커스 영향 없음) */
+  var rc=document.getElementById("resultCard");
+  if(rc)rc.outerHTML=rResult(R);
+  /* 출력 미리보기(요약 시트)도 같은 값으로 다시 그린다 */
+  var pv=document.querySelector(".preview");
+  if(pv)pv.innerHTML=rSheet(R);
+}
+
+/* ===================================================================
+   이벤트
+   =================================================================== */
+document.addEventListener("input",function(e){
+  var p=e.target.getAttribute&&e.target.getAttribute("data-path"); if(!p)return;
+  setPath(p,e.target.value); live(); autoSave();
+});
+document.addEventListener("change",function(e){
+  var p=e.target.getAttribute&&e.target.getAttribute("data-path"); if(!p)return;
+  setPath(p, e.target.type==="checkbox"?e.target.checked:e.target.value);
+  if(p==="roster")S.training.roster=S.roster;
+  /* select 는 다른 칸의 라벨(점수 표기)까지 바뀔 수 있어 전체 재렌더 */
+  if(e.target.tagName==="SELECT"||e.target.type==="checkbox")draw(); else live();
+  autoSave();
+});
+document.addEventListener("click",function(e){
+  var b=e.target.closest?e.target.closest("[data-act]"):null; if(!b)return;
+  var a=b.getAttribute("data-act"), id=b.getAttribute("data-id"), i;
+  if(a==="print"){window.print();return}
+  if(a==="goPrint"){
+    var el=document.querySelector(".preview");
+    if(el&&el.scrollIntoView)el.scrollIntoView({behavior:"smooth",block:"start"});
+    return;
+  }
+  if(a==="save"){saveLS(false);draw();return}
+  if(a==="reload"){MSG=loadLS()?"저장된 값을 불러왔습니다.":"저장된 값이 없습니다.";draw();return}
+  if(a==="export"){exportFile();draw();return}
+  if(a==="reset"){
+    if(window.confirm("입력한 모든 값을 지우고 처음 상태로 돌아갑니다. 계속할까요?")){resetAll();draw()}
+    return;
+  }
+  if(a==="dock"){
+    S.dock=!S.dock; var d=$("#dock");
+    d.setAttribute("data-o",String(S.dock));
+    d.querySelector("button").setAttribute("aria-expanded",String(S.dock));
+    return;
+  }
+  if(a==="addAward")S.training.awards.push({id:nid("a"),scope:"",grade:"",people:"1"});
+  else if(a==="delAward"){i=idx(S.training.awards,id); if(i>=0)S.training.awards.splice(i,1)}
+  else if(a==="addSel")S.bonus.selective.push({uid:nid("s"),id:"",months:{y:"",m:""}});
+  else if(a==="delSel"){
+    for(i=0;i<S.bonus.selective.length;i++)if(S.bonus.selective[i].uid===id){S.bonus.selective.splice(i,1);break}
+  }
+  else return;
+  draw(); autoSave();
+});
+loadLS();      /* 저장된 값이 있으면 자동 복원 */
+draw();
+</script>
+</body>
+</html>
