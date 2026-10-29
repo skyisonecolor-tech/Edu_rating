@@ -193,21 +193,6 @@ h3.h .l{font-weight:400;color:var(--ink-500)}
   font-weight:800;font-size:.95rem}
 .sh-note{margin-top:9px;font-size:.73rem;color:var(--ink-500)}
 
-/* 점수 구성 그래프 */
-.chart-note{font-size:.73rem;color:var(--ink-500);line-height:1.6;margin-bottom:11px}
-.gchart{display:flex;flex-direction:column;gap:9px}
-.grow{display:flex;align-items:center;gap:10px}
-.glab{flex:0 0 136px;font-size:.78rem;font-weight:600;display:flex;align-items:center;gap:7px}
-.glab .sw{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
-.gbar{flex:1 1 auto;display:flex;align-items:center;gap:9px;min-width:0}
-.gwrap{flex:1 1 auto;min-width:0}
-.gtrack{height:15px;border-radius:4px;background:var(--paper-deep);
-  border:1px solid var(--line);overflow:hidden;max-width:100%}
-.gtrack i{display:block;height:100%;border-radius:3px 0 0 3px}
-.gval{flex:0 0 auto;font-size:.75rem;font-weight:700;white-space:nowrap;
-  min-width:86px;text-align:right}
-.gval em{font-style:normal;font-weight:400;color:var(--ink-500)}
-
 /* 입력 내역 상세표 */
 .dt{margin-bottom:14px;break-inside:avoid}
 .dt-h{display:flex;align-items:baseline;gap:9px;margin-bottom:5px;flex-wrap:wrap}
@@ -262,17 +247,15 @@ h3.h .l{font-weight:400;color:var(--ink-500)}
   .shell{padding:0;max-width:none}
 
   /* 막대·배지의 색이 인쇄에서 날아가지 않도록 */
-  .mt-t i,.gtrack i,.sw,.sh-bn,.cap,.hero,.sh-rv,.dt-tb th,.dt-tb tfoot td{
+  .mt-t i,.sw,.sh-bn,.cap,.hero,.sh-rv,.dt-tb th,.dt-tb tfoot td{
     -webkit-print-color-adjust:exact; print-color-adjust:exact;
   }
-  .gtrack,.mt-t{border:1px solid #bbb}
+  .mt-t{border:1px solid #bbb}
 
   /* 인쇄에서는 여백을 조금 줄여 쪽수를 아낀다 */
   .hero{padding:10px 13px}
   .hero-v b{font-size:1.8rem}
   .sh-blk{margin:13px 0 7px}
-  .chart-note{margin-bottom:8px}
-  .gchart{gap:7px}
   .dt{margin-bottom:10px}
   .sh-tb td{padding:6px 8px}
   .dt-tb td,.dt-tb th{padding:5px 8px}
@@ -1287,35 +1270,12 @@ function rSheet(R){
        '<td class="num">'+tp.toFixed(1)+'%</td>'+
      '</tr></tfoot></table>';
 
-  /* ── 2. 영역별 점수 구성 (만점 대비 폭을 실제 배점에 비례시킨 그래프) ── */
-  h+=blk("2","영역별 점수 구성");
-  h+='<div class="chart-note">막대의 전체 길이가 그 영역의 만점이고, 진한 부분이 취득한 점수입니다. '+
-     '영역마다 배점이 다르므로 길이를 같은 자로 재어 비교할 수 있습니다.</div>';
-  var maxMax=0; an.forEach(function(a){ if(a.max>maxMax)maxMax=a.max });
-  h+='<div class="gchart">';
-  an.forEach(function(a){
-    var wTrack = maxMax>0 ? (a.max/maxMax*100) : 0;         /* 만점 비율 = 트랙 길이 */
-    var wFill  = a.max>0  ? (a.got/a.max*100) : 0;          /* 트랙 안에서의 취득 비율 */
-    h+='<div class="grow">'+
-         '<div class="glab"><span class="sw" style="background:'+SEG[a.key]+'"></span>'+esc(a.name)+'</div>'+
-         '<div class="gbar">'+
-           '<div class="gwrap">'+
-             '<div class="gtrack" style="width:'+wTrack.toFixed(2)+'%">'+
-               '<i style="width:'+wFill.toFixed(2)+'%;background:'+SEG[a.key]+'"></i>'+
-             '</div>'+
-           '</div>'+
-           '<span class="gval num">'+fmt(a.got)+' <em>/ '+fmtMax(a.max)+'</em></span>'+
-         '</div>'+
-       '</div>';
-  });
-  h+='</div>';
-
-  /* ── 3. 입력 내역 전체 ── */
-  h+=blk("3","입력 내역");
+  /* ── 2. 입력 내역 전체 ── */
+  h+=blk("2","입력 내역");
   h+=dCareer(R)+dTraining(R)+dResearch(R)+dBonus(R)+(R.perf.on?dPerf(R):"");
 
-  /* ── 4. 총평 ── */
-  h+=blk("4","총평");
+  /* ── 3. 총평 ── */
+  h+=blk("3","총평");
   h+='<div class="sh-rv"><div id="sheetReview">'+reviewHTML(R,an)+'</div></div>';
 
   h+='<div class="sh-ft">자가진단 참고용 문서입니다. 실제 평정점은 소속 학교(기관) 평정권자의 확인과 증빙서류 심사를 거쳐 확정됩니다.</div>';
